@@ -74,7 +74,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
     if (currentUser?.fullName) return currentUser.fullName;
     if (currentUser?.role === 'mudur_yardimcisi') return 'Fudan FİDAN';
     if (currentUser?.role === 'okul_muduru') return 'Recep KIZILIRMAK';
-    return 'Evrak Kayıt Memuru';
+    return 'Sultan YILDIRIM';
   });
 
   // Görünüm Modu: 'list' (Onay & Takip Listesi) veya 'analytics' (Raporlama & Veri Masası)
@@ -130,7 +130,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
         setReviewerName(currentUser.fullName || 'Recep KIZILIRMAK');
       } else if (currentUser.role === 'memur') {
         setActiveAdminRole('memur');
-        setReviewerName(currentUser.fullName || 'Evrak Kayıt Memuru');
+        setReviewerName(currentUser.fullName || 'Sultan YILDIRIM');
       }
     }
   }, [currentUser]);
@@ -139,7 +139,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   const handleRoleChange = (role: 'memur' | 'mudur_yardimcisi' | 'okul_muduru') => {
     setActiveAdminRole(role);
     if (role === 'memur') {
-      setReviewerName(currentUser?.fullName || 'Evrak Kayıt Memuru');
+      setReviewerName(currentUser?.fullName || 'Sultan YILDIRIM');
     } else if (role === 'mudur_yardimcisi') {
       setReviewerName(currentUser?.fullName || 'Fudan FİDAN');
     } else if (role === 'okul_muduru') {

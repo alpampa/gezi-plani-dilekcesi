@@ -30,8 +30,8 @@ interface AdminTitleOption {
 const ADMIN_TITLE_OPTIONS: AdminTitleOption[] = [
   {
     id: 'memur',
-    title: '1. Evrak Kayıt Memuru (Ön İnceleme)',
-    defaultName: 'Evrak Kayıt Memuru',
+    title: '1. Evrak Kayıt Memuru — Sultan YILDIRIM (Ön İnceleme)',
+    defaultName: 'Sultan YILDIRIM',
     badge: '1. İnceleme'
   },
   {
