@@ -14,19 +14,36 @@ import {
   CheckCircle2,
   BookOpen,
   PlusCircle,
-  Sparkles
+  Sparkles,
+  AlertTriangle,
+  Send,
+  Save,
+  Footprints
 } from 'lucide-react';
-import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem, GradeStudentRow } from '../types';
+import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem, GradeStudentRow, UserRole } from '../types';
 import { TURKISH_CITIES, ISTANBUL_DISTRICTS, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
 import { CURRICULUM_DATA } from '../data/curriculum';
+import { checkFiveDaysRule } from '../services/db';
 
 interface GeziFormProps {
   data: GeziPlanData;
   onChange: (updated: Partial<GeziPlanData>) => void;
   onPrint: () => void;
+  onSubmitForApproval?: () => void;
+  onSaveDraft?: () => void;
+  userRole?: UserRole;
 }
 
-export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) => {
+export const GeziForm: React.FC<GeziFormProps> = ({ 
+  data, 
+  onChange, 
+  onPrint, 
+  onSubmitForApproval, 
+  onSaveDraft,
+  userRole = 'ogretmen'
+}) => {
+  const fiveDaysStatus = checkFiveDaysRule(data.tripDate);
+  const isLockedForTeacher = userRole === 'ogretmen' && !fiveDaysStatus.isEditable && data.createdAt !== data.updatedAt;
   // Curriculum selector state
   const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-1');
   const [selectedLessonName, setSelectedLessonName] = useState<string>('Hayat Bilgisi (Maarif Modeli)');
@@ -231,6 +248,30 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
   return (
     <div className="space-y-6 sm:space-y-8 pb-16">
       
+      {/* 5 GÜN KURALI VE KİLİT BİLGİLENDİRME BANNERI */}
+      {isLockedForTeacher && (
+        <div className="bg-amber-500 text-white rounded-2xl p-5 shadow-lg flex items-start gap-3.5 animate-in slide-in-from-top-3">
+          <AlertTriangle className="w-6 h-6 text-amber-100 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-black uppercase tracking-wider text-amber-100">
+              MEB Gezi Yönergesi 5 Gün Kuralı Kısıtlaması
+            </h3>
+            <p className="text-xs text-white/95 mt-1 leading-relaxed">
+              {fiveDaysStatus.message}
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onPrint}
+                className="px-3.5 py-1.5 bg-white text-amber-900 rounded-lg text-xs font-bold shadow-xs hover:bg-amber-50 cursor-pointer"
+              >
+                🖨️ Resmi Dilekçe ve Plan Çıktısı Al (PDF)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. OKUL VE RESMİ BAŞVURU BİLGİLERİ */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 shadow-xs border border-slate-200">
         <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
@@ -1281,57 +1322,75 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Araç Plakası
-            </label>
-            <input
-              type="text"
-              value={data.vehiclePlate}
-              onChange={(e) => onChange({ vehiclePlate: e.target.value })}
-              placeholder="34 ZK 1923"
-              className="w-full px-3.5 py-2 text-sm uppercase rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
-            />
-          </div>
+          {data.transportationType === 'Yürüyerek' ? (
+            <div className="sm:col-span-2 lg:col-span-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <Footprints className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-emerald-950 block">
+                  🚶 Yürüyerek Ulaşım Seçildi (Araçsız Yakın Çevre Gezisi)
+                </span>
+                <span className="text-[11px] text-emerald-700 block mt-0.5">
+                  Araç plakası, firma ve şoför bilgisi gerekmemektedir. Lütfen aşağıdaki seyahat güzergâhı alanına yürüyüş rotasını ve cadde/sokak hattını yazınız.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Araç Plakası
+                </label>
+                <input
+                  type="text"
+                  value={data.vehiclePlate}
+                  onChange={(e) => onChange({ vehiclePlate: e.target.value })}
+                  placeholder="34 ZK 1923"
+                  className="w-full px-3.5 py-2 text-sm uppercase rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Firma / Turizm Acentesi
-            </label>
-            <input
-              type="text"
-              value={data.transportCompany}
-              onChange={(e) => onChange({ transportCompany: e.target.value })}
-              placeholder="Lider Turizm A.Ş."
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Firma / Turizm Acentesi
+                </label>
+                <input
+                  type="text"
+                  value={data.transportCompany}
+                  onChange={(e) => onChange({ transportCompany: e.target.value })}
+                  placeholder="Lider Turizm A.Ş."
+                  className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Sürücü Adı Soyadı
-            </label>
-            <input
-              type="text"
-              value={data.driverName}
-              onChange={(e) => onChange({ driverName: e.target.value })}
-              placeholder="Mustafa KAYA"
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Sürücü Adı Soyadı
+                </label>
+                <input
+                  type="text"
+                  value={data.driverName}
+                  onChange={(e) => onChange({ driverName: e.target.value })}
+                  placeholder="Mustafa KAYA"
+                  className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Sürücü İletişim Telefonu
-            </label>
-            <input
-              type="text"
-              value={data.driverPhone}
-              onChange={(e) => onChange({ driverPhone: e.target.value })}
-              placeholder="0532 000 00 00"
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Sürücü İletişim Telefonu
+                </label>
+                <input
+                  type="text"
+                  value={data.driverPhone}
+                  onChange={(e) => onChange({ driverPhone: e.target.value })}
+                  placeholder="0532 000 00 00"
+                  className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+              </div>
+            </>
+          )}
 
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -1505,21 +1564,56 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
       </section>
 
       {/* Bottom Floating / Big Action Banner */}
-      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 rounded-2xl p-6 text-white shadow-xl shadow-red-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
+      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 rounded-2xl p-6 text-white shadow-xl shadow-red-500/20 flex flex-col lg:flex-row items-center justify-between gap-5">
+        <div className="space-y-1 text-center lg:text-left">
+          <div className="flex items-center justify-center lg:justify-start gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-xs font-black uppercase tracking-wider text-red-100">
+              MEB Onay Süreci
+            </span>
+            <span className="text-xs text-red-200">
+              Müdür: Recep KIZILIRMAK | Md. Yrd: Fudan FİDAN
+            </span>
+          </div>
           <h3 className="text-lg font-black tracking-tight">Gezi Planı ve Dilekçeniz Hazır mı?</h3>
-          <p className="text-xs sm:text-sm text-red-100 mt-1">
-            Bilgileri tamamladıktan sonra butona tıklayarak resmi A4 formatında yazdırabilir veya PDF olarak kaydedebilirsiniz.
+          <p className="text-xs sm:text-sm text-red-100 max-w-xl">
+            Bilgileri tamamladıktan sonra Okul İdaresi onayına sunabilir, taslak olarak kaydedebilir veya doğrudan resmi A4 formatında yazdırabilirsiniz.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onPrint}
-          className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-red-700 font-extrabold text-sm sm:text-base rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer shrink-0"
-        >
-          <span>🖨️ Resmi Planı Yazdır / PDF Al</span>
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-2.5 shrink-0 w-full lg:w-auto">
+          {/* Taslak Kaydet */}
+          {onSaveDraft && (
+            <button
+              type="button"
+              onClick={onSaveDraft}
+              className="px-4 py-3 bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Taslak Kaydet</span>
+            </button>
+          )}
+
+          {/* Resmi Yazdır */}
+          <button
+            type="button"
+            onClick={onPrint}
+            className="px-4 py-3 bg-slate-900/40 hover:bg-slate-900/60 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/20 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>🖨️ Yazdır / PDF</span>
+          </button>
+
+          {/* Onaya Gönder & Veritabanına Kaydet (Ana Buton) */}
+          {onSubmitForApproval && !isLockedForTeacher && (
+            <button
+              type="button"
+              onClick={onSubmitForApproval}
+              className="px-6 py-3.5 bg-white hover:bg-slate-50 text-red-700 font-black text-sm sm:text-base rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
+            >
+              <Send className="w-4 h-4 text-red-600" />
+              <span>Onaya Gönder & Kaydet</span>
+            </button>
+          )}
+        </div>
       </div>
 
     </div>

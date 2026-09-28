@@ -4,30 +4,44 @@ import {
   PlusCircle, 
   Save, 
   History, 
-  Sparkles,
-  School
+  Sparkles, 
+  School, 
+  GraduationCap, 
+  Building2, 
+  Database 
 } from 'lucide-react';
+import type { UserRole } from '../types';
 
 interface HeaderProps {
+  userRole: UserRole;
+  onRoleChange: (role: UserRole) => void;
   onNewPlan: () => void;
   onPrint: () => void;
   onSave: () => void;
   onOpenHistory: () => void;
   onLoadSample: () => void;
+  onOpenGitHubSync: () => void;
   savedCount: number;
+  pendingCount: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  userRole,
+  onRoleChange,
   onNewPlan,
   onPrint,
   onSave,
   onOpenHistory,
   onLoadSample,
-  savedCount
+  onOpenGitHubSync,
+  savedCount,
+  pendingCount
 }) => {
   return (
     <header className="no-print sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Main Header Bar */}
         <div className="flex items-center justify-between h-16 sm:h-20 gap-3">
           
           {/* Logo & Title */}
@@ -41,17 +55,52 @@ export const Header: React.FC<HeaderProps> = ({
                   MEB & EBA ODOS Uyumlu
                 </span>
                 <span className="hidden md:inline-block text-xs font-medium text-slate-500">
-                  Maarif Modeli Gezi Planı
+                  Türkiye Yüzyılı Maarif Modeli
                 </span>
               </div>
-              <h1 className="text-base sm:text-lg lg:text-xl font-black tracking-tight text-slate-900 truncate">
-                Okul Dışı Öğrenme Gezi Planı ve Dilekçesi
+              <h1 className="text-sm sm:text-base lg:text-lg font-black tracking-tight text-slate-900 truncate">
+                Okul Dışı Öğrenme Gezi Planı ve İzin Dilekçesi
               </h1>
             </div>
           </div>
 
+          {/* Role Switcher in Header */}
+          <div className="hidden md:flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => onRoleChange('ogretmen')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                userRole === 'ogretmen'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4 text-rose-600" />
+              <span>Öğretmen Girişi</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onRoleChange('okul_idaresi')}
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                userRole === 'okul_idaresi'
+                  ? 'bg-white text-indigo-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Building2 className="w-4 h-4 text-indigo-600" />
+              <span>Okul İdaresi</span>
+              {pendingCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            
             {/* New Form (Reset) */}
             <button
               onClick={onNewPlan}
@@ -72,6 +121,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Sparkles className="w-4 h-4 text-amber-600" />
               <span className="hidden sm:inline">Örnek Doldur</span>
+            </button>
+
+            {/* GitHub Sync Button */}
+            <button
+              onClick={onOpenGitHubSync}
+              type="button"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors cursor-pointer"
+              title="GitHub Bulut Veritabanı ile Eşitle"
+            >
+              <Database className="w-4 h-4 text-indigo-600" />
+              <span className="hidden lg:inline">GitHub DB</span>
             </button>
 
             {/* Save to LocalStorage */}
@@ -113,6 +173,36 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
         </div>
+
+        {/* Mobile Role Switcher Bar */}
+        <div className="md:hidden flex items-center justify-center p-1.5 bg-slate-100 rounded-xl border border-slate-200 mb-2">
+          <button
+            type="button"
+            onClick={() => onRoleChange('ogretmen')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+              userRole === 'ogretmen'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4 text-rose-600" />
+            <span>Öğretmen Girişi</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onRoleChange('okul_idaresi')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+              userRole === 'okul_idaresi'
+                ? 'bg-white text-indigo-900 shadow-xs'
+                : 'text-slate-600'
+            }`}
+          >
+            <Building2 className="w-4 h-4 text-indigo-600" />
+            <span>Okul İdaresi ({pendingCount} Onay)</span>
+          </button>
+        </div>
+
       </div>
     </header>
   );

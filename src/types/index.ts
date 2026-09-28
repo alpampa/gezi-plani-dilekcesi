@@ -1,3 +1,6 @@
+export type UserRole = 'ogretmen' | 'okul_idaresi';
+export type PlanStatus = 'taslak' | 'onay_bekliyor' | 'onaylandi' | 'reddedildi';
+
 export interface GradeStudentRow {
   id: string;
   gradeName: string; // Örn: '3-A', 'Anasınıfı-B', '4-C'
@@ -35,27 +38,34 @@ export interface GeziPlanData {
   createdAt: string;
   updatedAt: string;
   
+  // Durum ve Onay Bilgileri
+  status: PlanStatus;
+  submittedBy?: string; // Öğretmen adı
+  approvalNotes?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  
   // 1. İdari ve Okul Bilgileri
   city: string;
   district: string;
   schoolName: string;
   clubName: string;
   documentDate: string;
-  documentNumber: string;
-  principalName: string;
-  deputyPrincipalName: string;
+  documentNumber: string; // Sayı / Evrak Kayıt No (Varsayılan boş)
+  principalName: string; // Varsayılan: Recep KIZILIRMAK
+  deputyPrincipalName: string; // Varsayılan: Fudan FİDAN
   
   // 2. Gezi Mekan & Türü
   destinationCategory: string;
   destinationMode: 'preset' | 'custom';
   selectedCity: string;
-  selectedDistrict: string; // Gezi yeri ilçe seçimi
+  selectedDistrict: string;
   destinationName: string;
   destinationAddress: string;
   tripType: 'İl İçi' | 'İl Dışı';
   tripDuration: 'Günübirlik' | 'Konaklamalı';
   
-  // 3. Hedef Kitle & Katılımcılar (Her sınıf yeni satırda ve toplam)
+  // 3. Hedef Kitle & Katılımcılar
   targetGrades: string;
   gradeRows: GradeStudentRow[];
   maleStudentCount: number;
@@ -64,11 +74,11 @@ export interface GeziPlanData {
   totalTeacherCount: number;
   totalCompanionCount: number;
   
-  // 4. Eğitim & Kazanım Bilgileri
+  // 4. Eğitim & Maarif Modeli Kazanım Bilgileri
   courseName: string;
   subjectTopic: string;
   purpose: string;
-  outcomes: string; // Öğrenme Çıktıları / Kazanımları
+  outcomes: string;
   
   // 5. Tarih, Zaman ve Ulaşım
   tripDate: string;

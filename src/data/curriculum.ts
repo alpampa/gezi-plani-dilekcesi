@@ -1,7 +1,7 @@
 export interface CurriculumItem {
   id: string;
-  grade: string; // 'Okul Öncesi (Anasınıfı)' | '1. Sınıf' | '2. Sınıf' | '3. Sınıf' | '4. Sınıf'
-  modelType: 'Türkiye Yüzyılı Maarif Modeli' | 'MEB Öğretim Programı (Mevcut)';
+  grade: string;
+  modelType: 'Türkiye Yüzyılı Maarif Modeli' | 'MEB Öğretim Programı';
   lessons: {
     name: string;
     topics: {
@@ -15,38 +15,50 @@ export interface CurriculumItem {
 }
 
 export const CURRICULUM_DATA: CurriculumItem[] = [
-  // 1. OKUL ÖNCESİ (ANASINIFI) - MAARİF MODELİ
+  // ==================== 1. OKUL ÖNCESİ (ANASINIFI) - MAARİF MODELİ ====================
   {
     id: 'grade-preschool',
     grade: 'Okul Öncesi (Anasınıfı)',
     modelType: 'Türkiye Yüzyılı Maarif Modeli',
     lessons: [
       {
-        name: 'Doğa, Çevre ve Yaşam Becerileri',
+        name: 'Doğa, Çevre ve Yaşam Becerileri (Maarif Modeli)',
         topics: [
           {
-            title: 'Doğa ve Canlılar / Çevre Bilinci',
+            title: 'Doğa, Çevre Bilinci ve Canlılar',
             outcomes: [
-              { code: 'OÖ.ÖÇ.1', text: 'OÖ.ÖÇ.1. Doğadaki canlı ve cansız varlıkların özelliklerini yerinde gözlemler ve betimler.' },
-              { code: 'OÖ.ÖÇ.2', text: 'OÖ.ÖÇ.2. Çevresindeki doğal ve kültürel varlıkları korumaya istekli olur ve saygı gösterir.' },
-              { code: 'OÖ.ÖÇ.3', text: 'OÖ.ÖÇ.3. Çevreye karşı duyarlı davranışlar sergiler, atıkların ayrıştırılması ve geri dönüşümün önemini fark eder.' },
-              { code: 'OÖ.ÖÇ.4', text: 'OÖ.ÖÇ.4. Doğal olayları, mevsim geçişlerini ve bitkilerin gelişim evrelerini açık alanda inceler.' }
+              { code: 'OÖ.ÖÇ.1', text: 'OÖ.ÖÇ.1. Doğadaki canlı ve cansız varlıkların temel özelliklerini yerinde gözlemleyerek betimler.' },
+              { code: 'OÖ.ÖÇ.2', text: 'OÖ.ÖÇ.2. Çevresindeki doğal, tarihi ve kültürel varlıkları korumaya istekli olur ve özen gösterir.' },
+              { code: 'OÖ.ÖÇ.3', text: 'OÖ.ÖÇ.3. Çevre temizliğine dikkat eder; atıkların ayrıştırılması ve geri dönüşümün doğa için önemini fark eder.' },
+              { code: 'OÖ.ÖÇ.4', text: 'OÖ.ÖÇ.4. Doğal olayları, mevsim geçişlerini ve bitkilerin büyüme evrelerini açık havada inceler.' }
             ]
           },
           {
-            title: 'Kültürel Miras ve Sanat Alanları',
+            title: 'Kültürel Miras, Müze ve Sanat Alanları',
             outcomes: [
               { code: 'OÖ.ÖÇ.5', text: 'OÖ.ÖÇ.5. Müze, sergi, tiyatro ve sanat atölyesi gibi okul dışı ortamlarda kurallara uygun hareket eder.' },
-              { code: 'OÖ.ÖÇ.6', text: 'OÖ.ÖÇ.6. Kültürel ögeleri, tarihi objeleri ve sanat eserlerini merakla inceler ve sorular sorar.' },
-              { code: 'OÖ.ÖÇ.7', text: 'OÖ.ÖÇ.7. Ziyaret ettiği ortamdaki gözlemlerini çizim, kil, drama ve anlatım yoluyla ifade eder.' }
+              { code: 'OÖ.ÖÇ.6', text: 'OÖ.ÖÇ.6. Kültürel objeleri, tarihi eserleri ve sanat yapıtlarını merakla inceler ve sorular sorar.' },
+              { code: 'OÖ.ÖÇ.7', text: 'OÖ.ÖÇ.7. Ziyaret ettiği ortamdaki gözlemlerini resim, kil, drama ve masal yoluyla ifade eder.' }
             ]
           },
           {
-            title: 'Sosyal Kurallar ve Güvenlik',
+            title: 'Sosyal Kurallar, Ulaşım ve Güvenlik',
             outcomes: [
-              { code: 'OÖ.ÖÇ.8', text: 'OÖ.ÖÇ.8. Grup etkinliklerinde ve gezi süresince öğretmen ve refakatçilerin yönergelerine uyar.' },
-              { code: 'OÖ.ÖÇ.9', text: 'OÖ.ÖÇ.9. Toplu taşıma ve servis araçlarında güvenlik kurallarına (emniyet kemeri, düzenli iniş-biniş) uyar.' },
-              { code: 'OÖ.ÖÇ.10', text: 'OÖ.ÖÇ.10. Ortak kullanım alanlarında nezaket ve sıra bekleme kurallarını uygular.' }
+              { code: 'OÖ.ÖÇ.8', text: 'OÖ.ÖÇ.8. Gezi süresince öğretmen ve refakatçilerin rehberlik yönergelerine titizlikle uyar.' },
+              { code: 'OÖ.ÖÇ.9', text: 'OÖ.ÖÇ.9. Servis araçlarında, toplu taşımada ve yaya yürüyüşlerinde güvenlik kurallarına uyar.' },
+              { code: 'OÖ.ÖÇ.10', text: 'OÖ.ÖÇ.10. Ortak kullanım alanlarında nezaket, sıra bekleme ve grup uyumu kurallarını uygular.' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Görsel Sanatlar, Ritim ve Hareket',
+        topics: [
+          {
+            title: 'Sanatsal Keşif ve Beden Koordinasyonu',
+            outcomes: [
+              { code: 'OÖ.GS.1', text: 'OÖ.GS.1. Doğadaki ve müzelerdeki doku, renk ve biçimleri fark eder; duygularını renklere yansıtır.' },
+              { code: 'OÖ.BE.2', text: 'OÖ.BE.2. Açık hava doğa parkurlarında denge, esneklik ve koordinasyon gerektiren hareketleri güvenle yapar.' }
             ]
           }
         ]
@@ -54,7 +66,7 @@ export const CURRICULUM_DATA: CurriculumItem[] = [
     ]
   },
 
-  // 2. 1. SINIF - MAARİF MODELİ
+  // ==================== 2. 1. SINIF - MAARİF MODELİ ====================
   {
     id: 'grade-1',
     grade: '1. Sınıf',
@@ -101,6 +113,18 @@ export const CURRICULUM_DATA: CurriculumItem[] = [
         ]
       },
       {
+        name: 'Matematik & Doğa Keşfi',
+        topics: [
+          {
+            title: 'Uzamsal İlişkiler ve Sayma',
+            outcomes: [
+              { code: 'MAT.1.ÖÇ1', text: 'MAT.1.ÖÇ1. Gezi güzergâhındaki yön, konum ve mekânsal ilişkileri yerinde kavrar.' },
+              { code: 'MAT.1.ÖÇ2', text: 'MAT.1.ÖÇ2. Müze ve doğa alanındaki nesneleri özelliklerine göre gruplandırır ve sayar.' }
+            ]
+          }
+        ]
+      },
+      {
         name: 'Görsel Sanatlar & Müzik',
         topics: [
           {
@@ -115,7 +139,7 @@ export const CURRICULUM_DATA: CurriculumItem[] = [
     ]
   },
 
-  // 3. 2. SINIF - MAARİF MODELİ
+  // ==================== 3. 2. SINIF - MAARİF MODELİ ====================
   {
     id: 'grade-2',
     grade: '2. Sınıf',
@@ -160,11 +184,23 @@ export const CURRICULUM_DATA: CurriculumItem[] = [
             ]
           }
         ]
+      },
+      {
+        name: 'Görsel Sanatlar & Beden Eğitimi',
+        topics: [
+          {
+            title: 'Görsel Tasarım ve Doğa Oyunları',
+            outcomes: [
+              { code: 'GS.2.ÖÇ1', text: 'GS.2.ÖÇ1. Tarihi ve doğal mekanlardaki desen, form ve ışık oyunlarını inceler; resim çalışmasına aktarır.' },
+              { code: 'BE.2.ÖÇ1', text: 'BE.2.ÖÇ1. Açık alan etkinliklerinde arkadaşlarıyla iş birliği içinde geleneksel çocuk oyunları oynar.' }
+            ]
+          }
+        ]
       }
     ]
   },
 
-  // 4. 3. SINIF - MAARİF MODELİ
+  // ==================== 4. 3. SINIF - MAARİF MODELİ ====================
   {
     id: 'grade-3',
     grade: '3. Sınıf',
@@ -194,12 +230,24 @@ export const CURRICULUM_DATA: CurriculumItem[] = [
         name: 'Fen Bilimleri (Maarif Modeli)',
         topics: [
           {
-            title: 'Gezegenimizi Tanıyalım & Canlılar Dünyasına Yolculuk',
+            title: 'Gezegenimiz, Madenler ve Bilimsel Keşifler',
             outcomes: [
               { code: 'FB.3.1.ÖÇ1', text: 'FB.3.1.ÖÇ1. Dünya\'nın katmanlarını, kayaçları, mineralleri ve fosil oluşumunu tabiat tarihi müzesinde inceler.' },
               { code: 'FB.3.3.ÖÇ2', text: 'FB.3.3.ÖÇ2. Canlıların yaşam alanlarını ve çevresel uyumlarını doğal ortamlarında gözlemler.' },
               { code: 'FB.3.4.ÖÇ1', text: 'FB.3.4.ÖÇ1. Geçmişte ve günümüzde kullanılan teknolojik ürünleri bilim merkezinde deney düzenekleriyle keşfeder.' },
               { code: 'FB.3.5.ÖÇ3', text: 'FB.3.5.ÖÇ3. Ses ve ışık kaynaklarının teknolojideki kullanımını interaktif sergilerde deneyimler.' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Türkçe & Edebiyat',
+        topics: [
+          {
+            title: 'Gezi Yazısı ve Bilgilendirici Metinler',
+            outcomes: [
+              { code: 'T.3.ÖÇ1', text: 'T.3.ÖÇ1. Gezi sonrasında izlenimlerini kronolojik sıraya ve ana fikre uygun bir gezi yazısı olarak kaleme alır.' },
+              { code: 'T.3.ÖÇ2', text: 'T.3.ÖÇ2. Okul dışı öğrenme ortamında edindiği bilgileri görsel ve grafiklerle destekleyerek sınıfta sunar.' }
             ]
           }
         ]
@@ -219,11 +267,11 @@ export const CURRICULUM_DATA: CurriculumItem[] = [
     ]
   },
 
-  // 5. 4. SINIF - ESKİ / MEVCUT MEB ÖĞRETİM PROGRAMI
+  // ==================== 5. 4. SINIF - MEB ÖĞRETİM PROGRAMI ====================
   {
     id: 'grade-4',
     grade: '4. Sınıf',
-    modelType: 'MEB Öğretim Programı (Mevcut)',
+    modelType: 'MEB Öğretim Programı',
     lessons: [
       {
         name: 'Sosyal Bilgiler (4. Sınıf)',
@@ -317,6 +365,18 @@ export const CURRICULUM_DATA: CurriculumItem[] = [
             outcomes: [
               { code: 'İHYD.4.4.1.', text: 'İHYD.4.4.1. Ortak yaşam alanlarının korunması ve temiz tutulması konusunda sorumluluk üstlenir.' },
               { code: 'İHYD.4.4.2.', text: 'İHYD.4.4.2. Toplumsal kuralların ve nezaketin kamusal mekanlardaki gerekliliğini savunur.' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Din Kültürü ve Ahlak Bilgisi (4. Sınıf)',
+        topics: [
+          {
+            title: 'Dini Mekanlar ve Manevi Değerler',
+            outcomes: [
+              { code: 'DKAB.4.3.1.', text: 'DKAB.4.3.1. Cami, külliye ve tarihi türbelerin mimari bölümlerini ve toplumsal işlevini tanır.' },
+              { code: 'DKAB.4.3.2.', text: 'DKAB.4.3.2. Kültürümüzdeki manevi ve ahlaki değerlerin mimariye ve sanata yansımalarını fark eder.' }
             ]
           }
         ]

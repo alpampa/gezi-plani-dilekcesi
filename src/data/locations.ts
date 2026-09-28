@@ -599,14 +599,15 @@ export const PRESET_LOCATIONS: PresetLocation[] = [
 ];
 
 export const INITIAL_EMPTY_PLAN = {
+  status: 'taslak' as const,
   city: 'İstanbul',
   district: 'Üsküdar',
   schoolName: 'Zeynep Kamil İlkokulu',
   clubName: 'Sosyal Etkinlikler ve Gezi İnceleme Kulübü',
   documentDate: new Date().toISOString().split('T')[0],
-  documentNumber: 'E-83920194-000-001',
-  principalName: 'Ahmet YILMAZ',
-  deputyPrincipalName: 'Mehmet DEMİR',
+  documentNumber: '', // Boş gelsin
+  principalName: 'Recep KIZILIRMAK', // Varsayılan Okul Müdürü
+  deputyPrincipalName: 'Fudan FİDAN', // Varsayılan Müdür Yardımcısı
   
   destinationCategory: 'Tüm Kategoriler',
   destinationMode: 'preset' as const,
@@ -617,11 +618,11 @@ export const INITIAL_EMPTY_PLAN = {
   tripType: 'İl İçi' as const,
   tripDuration: 'Günübirlik' as const,
   
-  targetGrades: '3-A ve 3-B Şubeleri',
+  targetGrades: '',
   gradeRows: [
     {
       id: 'gr-1',
-      gradeName: '3-A',
+      gradeName: '',
       maleCount: 0,
       femaleCount: 0,
       totalCount: 0

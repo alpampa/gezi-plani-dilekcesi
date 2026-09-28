@@ -190,22 +190,39 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
         </div>
         <table className="w-full border-collapse">
           <tbody>
-            <tr className="border-b border-black">
-              <td className="w-1/4 p-1.5 font-bold border-r border-black bg-gray-50">Ulaşım Türü / Şekli</td>
-              <td className="w-1/4 p-1.5 border-r border-black">{data.transportationType}</td>
-              <td className="w-1/4 p-1.5 font-bold border-r border-black bg-gray-50">Araç Plakası / Firma</td>
-              <td className="w-1/4 p-1.5 font-semibold">{data.vehiclePlate} ({data.transportCompany || 'Firma Belirtilmedi'})</td>
-            </tr>
-            <tr className="border-b border-black">
-              <td className="p-1.5 font-bold border-r border-black bg-gray-50">Sürücü Adı & Tel</td>
-              <td className="p-1.5 border-r border-black">{data.driverName || '-'} / {data.driverPhone || '-'}</td>
-              <td className="p-1.5 font-bold border-r border-black bg-gray-50">Hareket / Dönüş Yeri</td>
-              <td className="p-1.5">{data.departureLocation} - {data.returnLocation}</td>
-            </tr>
-            <tr>
-              <td className="p-1.5 font-bold border-r border-black bg-gray-50">Seyahat Güzergâhı</td>
-              <td colSpan={3} className="p-1.5">{data.travelRoute || 'Okul -> Gezi Alanı -> Okul'}</td>
-            </tr>
+            {data.transportationType === 'Yürüyerek' ? (
+              <>
+                <tr className="border-b border-black">
+                  <td className="w-1/4 p-1.5 font-bold border-r border-black bg-gray-50">Ulaşım Türü / Şekli</td>
+                  <td className="w-1/4 p-1.5 border-r border-black font-semibold">Yürüyerek (Araçsız Yakın Çevre İntikali)</td>
+                  <td className="w-1/4 p-1.5 font-bold border-r border-black bg-gray-50">Hareket / Dönüş Yeri</td>
+                  <td className="w-1/4 p-1.5">{data.departureLocation} - {data.returnLocation}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Yürüyüş Güzergâhı</td>
+                  <td colSpan={3} className="p-1.5">{data.travelRoute || `${data.departureLocation} -> ${data.destinationName} -> ${data.returnLocation}`}</td>
+                </tr>
+              </>
+            ) : (
+              <>
+                <tr className="border-b border-black">
+                  <td className="w-1/4 p-1.5 font-bold border-r border-black bg-gray-50">Ulaşım Türü / Şekli</td>
+                  <td className="w-1/4 p-1.5 border-r border-black">{data.transportationType}</td>
+                  <td className="w-1/4 p-1.5 font-bold border-r border-black bg-gray-50">Araç Plakası / Firma</td>
+                  <td className="w-1/4 p-1.5 font-semibold">{data.vehiclePlate || '-'} ({data.transportCompany || 'Firma Belirtilmedi'})</td>
+                </tr>
+                <tr className="border-b border-black">
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Sürücü Adı & Tel</td>
+                  <td className="p-1.5 border-r border-black">{data.driverName || '-'} / {data.driverPhone || '-'}</td>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Hareket / Dönüş Yeri</td>
+                  <td className="p-1.5">{data.departureLocation} - {data.returnLocation}</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 font-bold border-r border-black bg-gray-50">Seyahat Güzergâhı</td>
+                  <td colSpan={3} className="p-1.5">{data.travelRoute || 'Okul -> Gezi Alanı -> Okul'}</td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
       </div>
