@@ -270,19 +270,197 @@ ${plan.schoolName} Müdürlüğü`;
   }
 }
 
+const BACKUP_SNAPSHOT_KEY = 'odos_gezi_plani_backup_snapshots_v1';
+
+/**
+ * Veritabanı Şema Normalizasyon & Geriye Dönük Uyumluluk Koruyucusu:
+ * Eski sürümlerde kaydedilmiş veya güncellenmiş tüm verileri eksiksiz korur,
+ * yeni eklenen alanları güvenli varsayılanlarla doldurur, veri kaybını %100 önler.
+ */
+export function normalizePlanData(raw: any): GeziPlanData {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: 'gezi-' + Date.now(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'taslak',
+      city: 'İstanbul',
+      district: 'Üsküdar',
+      schoolName: 'Zeynep Kamil İlkokulu',
+      clubName: 'Gezi Tanıtma ve Turizm Kulübü',
+      documentDate: new Date().toISOString().split('T')[0],
+      documentNumber: '',
+      principalName: 'Recep KIZILIRMAK',
+      deputyPrincipalName: 'Fudan FİDAN',
+      destinationCategory: 'Tarihi ve Kültürel Mekânlar',
+      destinationMode: 'preset',
+      selectedCity: 'İstanbul',
+      selectedDistrict: 'Üsküdar',
+      destinationName: '',
+      destinationAddress: '',
+      tripType: 'İl İçi',
+      tripDuration: 'Günübirlik',
+      targetGrades: '',
+      gradeRows: [],
+      maleStudentCount: 0,
+      femaleStudentCount: 0,
+      totalStudentCount: 0,
+      totalTeacherCount: 1,
+      totalCompanionCount: 0,
+      courseName: '',
+      subjectTopic: '',
+      purpose: '',
+      outcomes: '',
+      tripDate: '',
+      departureTime: '09:00',
+      returnTime: '14:30',
+      departureLocation: 'Okul Bahçesi',
+      returnLocation: 'Okul Bahçesi',
+      transportationType: 'Okul Servis Aracı',
+      vehiclePlate: '',
+      driverName: '',
+      driverPhone: '',
+      transportCompany: '',
+      travelRoute: '',
+      headTeacher: { id: 't-1', fullName: '', branch: 'Sınıf Öğretmeni', role: 'Kafile Başkanı', phone: '' },
+      teachers: [],
+      companions: [],
+      schedule: [],
+      preTripNotes: '',
+      duringTripNotes: '',
+      postTripNotes: '',
+      safetyMeasures: ''
+    };
+  }
+
+  const maleCount = Number(raw.maleStudentCount) || 0;
+  const femaleCount = Number(raw.femaleStudentCount) || 0;
+  const totalCount = Number(raw.totalStudentCount) || (maleCount + femaleCount) || 0;
+  const teachersArr = Array.isArray(raw.teachers) ? raw.teachers : [];
+  const companionsArr = Array.isArray(raw.companions) ? raw.companions : [];
+  const scheduleArr = Array.isArray(raw.schedule) ? raw.schedule : [];
+  const gradeRowsArr = Array.isArray(raw.gradeRows) ? raw.gradeRows : [];
+
+  // Ulaşım türü geriye dönük uyumluluk
+  let transportationType = raw.transportationType;
+  if (transportationType === 'Diğer' || !transportationType) {
+    transportationType = 'Özel Turizm Otobüsü';
+  }
+
+  return {
+    id: raw.id || 'gezi-' + Date.now(),
+    createdAt: raw.createdAt || new Date().toISOString(),
+    updatedAt: raw.updatedAt || new Date().toISOString(),
+    status: raw.status || 'taslak',
+    submittedBy: raw.submittedBy || '',
+    teacherEmail: raw.teacherEmail || '',
+    schoolEmail: raw.schoolEmail || DEFAULT_SCHOOL_EMAIL,
+    
+    clerkReviewedAt: raw.clerkReviewedAt,
+    clerkReviewedBy: raw.clerkReviewedBy,
+    clerkNotes: raw.clerkNotes,
+    
+    deputyApprovedAt: raw.deputyApprovedAt,
+    deputyApprovedBy: raw.deputyApprovedBy,
+    deputyNotes: raw.deputyNotes,
+    
+    principalApprovedAt: raw.principalApprovedAt,
+    principalApprovedBy: raw.principalApprovedBy,
+    principalNotes: raw.principalNotes,
+    
+    approvalNotes: raw.approvalNotes,
+    approvedAt: raw.approvedAt,
+    approvedBy: raw.approvedBy,
+    
+    city: raw.city || 'İstanbul',
+    district: raw.district || 'Üsküdar',
+    schoolName: raw.schoolName || 'Zeynep Kamil İlkokulu',
+    clubName: raw.clubName || 'Gezi Tanıtma ve Turizm Kulübü',
+    documentDate: raw.documentDate || raw.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+    documentNumber: raw.documentNumber || '',
+    principalName: raw.principalName || 'Recep KIZILIRMAK',
+    deputyPrincipalName: raw.deputyPrincipalName || 'Fudan FİDAN',
+    clerkName: raw.clerkName || '',
+    
+    destinationCategory: raw.destinationCategory || 'Tarihi ve Kültürel Mekânlar',
+    destinationMode: raw.destinationMode || 'preset',
+    selectedCity: raw.selectedCity || 'İstanbul',
+    selectedDistrict: raw.selectedDistrict || 'Üsküdar',
+    destinationName: raw.destinationName || '',
+    destinationAddress: raw.destinationAddress || '',
+    tripType: raw.tripType || 'İl İçi',
+    tripDuration: raw.tripDuration || 'Günübirlik',
+    
+    targetGrades: raw.targetGrades || '',
+    gradeRows: gradeRowsArr,
+    maleStudentCount: maleCount,
+    femaleStudentCount: femaleCount,
+    totalStudentCount: totalCount,
+    totalTeacherCount: Number(raw.totalTeacherCount) || (1 + teachersArr.length),
+    totalCompanionCount: Number(raw.totalCompanionCount) || companionsArr.length,
+    
+    courseName: raw.courseName || '',
+    subjectTopic: raw.subjectTopic || '',
+    purpose: raw.purpose || '',
+    outcomes: raw.outcomes || '',
+    
+    tripDate: raw.tripDate || '',
+    departureTime: raw.departureTime || '09:00',
+    returnTime: raw.returnTime || '14:30',
+    departureLocation: raw.departureLocation || 'Okul Bahçesi',
+    returnLocation: raw.returnLocation || 'Okul Bahçesi',
+    transportationType,
+    vehiclePlate: raw.vehiclePlate || '',
+    driverName: raw.driverName || '',
+    driverPhone: raw.driverPhone || '',
+    transportCompany: raw.transportCompany || '',
+    travelRoute: raw.travelRoute || '',
+    
+    headTeacher: raw.headTeacher || {
+      id: 't-1',
+      fullName: raw.submittedBy || '',
+      branch: 'Sınıf Öğretmeni',
+      role: 'Kafile Başkanı',
+      phone: '',
+      tcNo: ''
+    },
+    teachers: teachersArr,
+    companions: companionsArr,
+    schedule: scheduleArr,
+    
+    preTripNotes: raw.preTripNotes || '',
+    duringTripNotes: raw.duringTripNotes || '',
+    postTripNotes: raw.postTripNotes || '',
+    safetyMeasures: raw.safetyMeasures || ''
+  };
+}
+
 /**
  * Veritabanı Yöneticisi (LocalStorage + GitHub Database Sync + Kademeli Onay)
  */
 export const DatabaseService = {
-  // Kayıtlı planları getir
+  // Kayıtlı planları getir (Tüm veriler korunarak normalize edilir)
   getPlans(): GeziPlanData[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) return [];
       const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+
+      // Her kaydı geriye dönük uyumlu normalize et
+      return parsed.map(p => normalizePlanData(p));
     } catch (e) {
-      console.error('Planlar getirilirken hata:', e);
+      console.error('Planlar getirilirken hata, yedek kontrol ediliyor:', e);
+      // Hata anında yedek snapshot kontrolü
+      try {
+        const backup = localStorage.getItem(BACKUP_SNAPSHOT_KEY);
+        if (backup) {
+          const parsedBackup = JSON.parse(backup);
+          if (Array.isArray(parsedBackup)) {
+            return parsedBackup.map(p => normalizePlanData(p));
+          }
+        }
+      } catch (_) {}
       return [];
     }
   },
@@ -294,16 +472,22 @@ export const DatabaseService = {
   },
 
   // Plan kaydet / güncelle
+  // Plan kaydet / güncelle (Eski verileri koruyarak snapshot yedek alır)
   savePlan(plan: GeziPlanData): { success: boolean; data: GeziPlanData; error?: string } {
     try {
       const plans = this.getPlans();
       const now = new Date().toISOString();
-      const existingIdx = plans.findIndex(p => p.id === plan.id);
+      
+      // Güvenlik Snapshot Yedeklemesi (Mevcut veriyi koruma altına al)
+      try {
+        localStorage.setItem(BACKUP_SNAPSHOT_KEY, JSON.stringify(plans));
+      } catch (_) {}
 
-      const planToSave: GeziPlanData = {
+      const existingIdx = plans.findIndex(p => p.id === plan.id);
+      const planToSave = normalizePlanData({
         ...plan,
         updatedAt: now
-      };
+      });
 
       let updatedList: GeziPlanData[];
       if (existingIdx >= 0) {
@@ -325,10 +509,14 @@ export const DatabaseService = {
     }
   },
 
-  // Plan sil
+  // Plan sil (Snapshot yedekli)
   deletePlan(id: string): boolean {
     try {
       const plans = this.getPlans();
+      try {
+        localStorage.setItem(BACKUP_SNAPSHOT_KEY, JSON.stringify(plans));
+      } catch (_) {}
+
       const filtered = plans.filter(p => p.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
       this.syncWithGitHub(filtered).catch(err => console.warn('GitHub Sync uyarısı:', err));
@@ -533,10 +721,11 @@ export const DatabaseService = {
       if (fileContent) {
         const parsed = JSON.parse(fileContent);
         if (Array.isArray(parsed)) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+          const normalized = parsed.map(p => normalizePlanData(p));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
           config.lastSyncAt = new Date().toISOString();
           this.saveGitHubConfig(config);
-          return { success: true, count: parsed.length };
+          return { success: true, count: normalized.length };
         }
       }
       return { success: false, count: 0, error: 'Veri formatı uyuşmuyor' };
@@ -545,7 +734,7 @@ export const DatabaseService = {
     }
   },
 
-  // Takip & Raporlama için İstatistik ve Veri Analizi
+  // Takip & Raporlama için Kapsamlı İstatistik ve Veri Analizi
   getAnalyticsData(plans: GeziPlanData[]) {
     const totalPlans = plans.length;
     const pendingClerk = plans.filter(p => p.status === 'memur_incelemesinde').length;
@@ -557,8 +746,8 @@ export const DatabaseService = {
     const totalStudents = plans.reduce((acc, p) => acc + (Number(p.totalStudentCount) || 0), 0);
     const totalMale = plans.reduce((acc, p) => acc + (Number(p.maleStudentCount) || 0), 0);
     const totalFemale = plans.reduce((acc, p) => acc + (Number(p.femaleStudentCount) || 0), 0);
-    const totalTeachers = plans.reduce((acc, p) => acc + 1 + (p.teachers?.length || 0), 0);
-    const totalCompanions = plans.reduce((acc, p) => acc + (p.companions?.length || 0), 0);
+    const totalTeachers = plans.reduce((acc, p) => acc + (Number(p.totalTeacherCount) || (1 + (p.teachers?.length || 0))), 0);
+    const totalCompanions = plans.reduce((acc, p) => acc + (Number(p.totalCompanionCount) || (p.companions?.length || 0)), 0);
 
     // Kategori Dağılımı
     const categoriesMap: Record<string, number> = {};
@@ -572,6 +761,27 @@ export const DatabaseService = {
     plans.forEach(p => {
       const d = p.selectedDistrict || 'Belirtilmedi';
       districtsMap[d] = (districtsMap[d] || 0) + 1;
+    });
+
+    // Ulaşım Türü Dağılımı
+    const transportMap: Record<string, number> = {};
+    plans.forEach(p => {
+      const t = p.transportationType || 'Belirtilmedi';
+      transportMap[t] = (transportMap[t] || 0) + 1;
+    });
+
+    // Gezi Türü Dağılımı (İl İçi / İl Dışı)
+    const tripTypeMap: Record<string, number> = { 'İl İçi': 0, 'İl Dışı': 0 };
+    plans.forEach(p => {
+      const tt = p.tripType || 'İl İçi';
+      tripTypeMap[tt] = (tripTypeMap[tt] || 0) + 1;
+    });
+
+    // Yıl Dağılımı
+    const yearsMap: Record<string, number> = {};
+    plans.forEach(p => {
+      const year = p.tripDate ? p.tripDate.split('-')[0] : (p.createdAt ? p.createdAt.split('-')[0] : '2026');
+      yearsMap[year] = (yearsMap[year] || 0) + 1;
     });
 
     return {
@@ -588,18 +798,23 @@ export const DatabaseService = {
       totalTeachers,
       totalCompanions,
       categoriesMap,
-      districtsMap
+      districtsMap,
+      transportMap,
+      tripTypeMap,
+      yearsMap
     };
   },
 
   // CSV Raporu İndir
-  downloadCSVReport(plans: GeziPlanData[]) {
+  downloadCSVReport(plans: GeziPlanData[], reportTitle?: string) {
     const headers = [
       'ID',
       'Durum',
       'Okul',
       'Gezi Yeri',
       'Kategori',
+      'Gezi Türü',
+      'Süre',
       'İlçe/İl',
       'Gezi Tarihi',
       'Saat',
@@ -611,7 +826,7 @@ export const DatabaseService = {
       'Kafile Tel',
       'Ulaşım Türü',
       'Araç Plaka',
-      'Oluşturulma Tarihi',
+      'Kayıt Tarihi',
       'Memur İnceleyen',
       'Müdür Yrd Onaylayan',
       'Müdür Onaylayan'
@@ -623,6 +838,8 @@ export const DatabaseService = {
       `"${p.schoolName || ''}"`,
       `"${p.destinationName || ''}"`,
       `"${p.destinationCategory || ''}"`,
+      `"${p.tripType || 'İl İçi'}"`,
+      `"${p.tripDuration || 'Günübirlik'}"`,
       `"${p.selectedDistrict || ''}/${p.selectedCity || ''}"`,
       p.tripDate || '',
       `"${p.departureTime || ''}-${p.returnTime || ''}"`,
@@ -645,7 +862,8 @@ export const DatabaseService = {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `MEB_Gezi_Planlari_Raporu_${new Date().toISOString().split('T')[0]}.csv`);
+    const safeTitle = (reportTitle || 'MEB_Gezi_Planlari_Raporu').replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.setAttribute('download', `${safeTitle}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();

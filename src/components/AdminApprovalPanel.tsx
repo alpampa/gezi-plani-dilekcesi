@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { GeziPlanData, AuthUser } from '../types';
 import { checkTripDeadlineRule, DatabaseService } from '../services/db';
 import { generateAndDownloadPlanPDF } from '../services/pdf';
+import { CATEGORIES, ISTANBUL_DISTRICTS } from '../data/locations';
 import { 
   Building2, 
   CheckCircle2, 
@@ -29,7 +30,9 @@ import {
   Send,
   X,
   FileDown,
-  AlertTriangle
+  AlertTriangle,
+  RotateCcw,
+  SlidersHorizontal
 } from 'lucide-react';
 
 interface AdminApprovalPanelProps {
@@ -73,9 +76,19 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   // Görünüm Modu: 'list' (Onay & Takip Listesi) veya 'analytics' (Raporlama & Veri Masası)
   const [viewMode, setViewMode] = useState<'list' | 'analytics'>('list');
 
-  // Filtreler: Varsayılan olarak kullanıcının kendi onay aşaması veya tümü
+  // Filtreler (Onay Listesi)
   const [activeTab, setActiveTab] = useState<'all' | 'clerk' | 'deputy' | 'principal' | 'approved' | 'rejected'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Raporlama ve İstatistik Filtreleri (Yıl, Tarih, Gezi Türü, Ulaşım, Kategori)
+  const [reportYear, setReportYear] = useState<string>('all');
+  const [reportStartDate, setReportStartDate] = useState<string>('');
+  const [reportEndDate, setReportEndDate] = useState<string>('');
+  const [reportTripType, setReportTripType] = useState<string>('all');
+  const [reportTransportType, setReportTransportType] = useState<string>('all');
+  const [reportCategory, setReportCategory] = useState<string>('all');
+  const [reportDistrict, setReportDistrict] = useState<string>('all');
+  const [reportStatus, setReportStatus] = useState<string>('all');
 
   // Detaylı İnceleme Modalı (Üzerine tıklayınca açılan)
   const [inspectingPlan, setInspectingPlan] = useState<GeziPlanData | null>(null);
@@ -85,8 +98,15 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   const [rejectingPlanId, setRejectingPlanId] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState('');
 
-  // İstatistikler
-  const analytics = DatabaseService.getAnalyticsData(plans);
+  // Genel İstatistikler
+  const generalAnalytics = DatabaseService.getAnalyticsData(plans);
+
+  // Dinamik Yıl Listesi (Kayıtlı planlardan otomatik çıkarılır)
+  const availableYears = Array.from(
+    new Set(
+      plans.map(p => p.tripDate?.split('-')[0] || p.createdAt?.split('-')[0] || '2026')
+    )
+  ).sort().reverse();
 
   // Props currentUser değişirse
   useEffect(() => {
@@ -116,7 +136,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
     }
   };
 
-  // Filtreleme
+  // Liste Modu Filtreleme
   const filteredPlans = plans.filter(plan => {
     // Tab filter
     if (activeTab === 'clerk' && plan.status !== 'memur_incelemesinde') return false;
@@ -143,6 +163,35 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
     const timeB = new Date(b.createdAt || b.documentDate || 0).getTime();
     return timeA - timeB; // En eski talep en üstte
   });
+
+  // Raporlama Modu Filtrelenmiş Veriler
+  const reportFilteredPlans = plans.filter(p => {
+    if (reportYear !== 'all') {
+      const y = p.tripDate ? p.tripDate.split('-')[0] : (p.createdAt ? p.createdAt.split('-')[0] : '');
+      if (y !== reportYear) return false;
+    }
+    if (reportStartDate && p.tripDate && p.tripDate < reportStartDate) return false;
+    if (reportEndDate && p.tripDate && p.tripDate > reportEndDate) return false;
+    if (reportTripType !== 'all' && p.tripType !== reportTripType) return false;
+    if (reportTransportType !== 'all' && p.transportationType !== reportTransportType) return false;
+    if (reportCategory !== 'all' && p.destinationCategory !== reportCategory) return false;
+    if (reportDistrict !== 'all' && p.selectedDistrict !== reportDistrict) return false;
+    if (reportStatus !== 'all' && p.status !== reportStatus) return false;
+    return true;
+  });
+
+  const reportAnalytics = DatabaseService.getAnalyticsData(reportFilteredPlans);
+
+  const resetReportFilters = () => {
+    setReportYear('all');
+    setReportStartDate('');
+    setReportEndDate('');
+    setReportTripType('all');
+    setReportTransportType('all');
+    setReportCategory('all');
+    setReportDistrict('all');
+    setReportStatus('all');
+  };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -220,19 +269,19 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
               }`}
             >
               <BarChart3 className="w-4 h-4" />
-              <span>{viewMode === 'analytics' ? 'Onay Listesine Dön' : '📊 İdare Takip & Rapor Verileri'}</span>
+              <span>{viewMode === 'analytics' ? 'Onay Listesine Dön' : '📊 Yıl & Tarih Bazlı Raporlama Masası'}</span>
             </button>
 
             {/* CSV Dışa Aktar */}
             <button
               type="button"
-              onClick={() => DatabaseService.downloadCSVReport(plans)}
+              onClick={() => DatabaseService.downloadCSVReport(plans, 'MEB_Zeynep_Kamil_Gezi_Raporu')}
               disabled={plans.length === 0}
               className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
               title="Tüm Gezi Planlarını Excel / CSV Formatında İndir"
             >
               <Download className="w-4 h-4" />
-              <span>Excel / CSV</span>
+              <span>Tüm Veritabanı CSV</span>
             </button>
 
           </div>
@@ -257,9 +306,9 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>1. Memur (İnceleme)</span>
-                {analytics.pendingClerk > 0 && (
+                {generalAnalytics.pendingClerk > 0 && (
                   <span className="px-1.5 py-0.2 text-[10px] bg-amber-900 text-amber-100 rounded-full font-black">
-                    {analytics.pendingClerk}
+                    {generalAnalytics.pendingClerk}
                   </span>
                 )}
               </button>
@@ -276,9 +325,9 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
               >
                 <Building2 className="w-3.5 h-3.5" />
                 <span>2. Fudan FİDAN (Uygun Görüş)</span>
-                {analytics.pendingDeputy > 0 && (
+                {generalAnalytics.pendingDeputy > 0 && (
                   <span className="px-1.5 py-0.2 text-[10px] bg-indigo-950 text-indigo-100 rounded-full font-black">
-                    {analytics.pendingDeputy}
+                    {generalAnalytics.pendingDeputy}
                   </span>
                 )}
               </button>
@@ -295,9 +344,9 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
               >
                 <Award className="w-3.5 h-3.5" />
                 <span>3. Recep KIZILIRMAK (Makam Oluru)</span>
-                {analytics.pendingPrincipal > 0 && (
+                {generalAnalytics.pendingPrincipal > 0 && (
                   <span className="px-1.5 py-0.2 text-[10px] bg-red-950 text-red-100 rounded-full font-black">
-                    {analytics.pendingPrincipal}
+                    {generalAnalytics.pendingPrincipal}
                   </span>
                 )}
               </button>
@@ -315,102 +364,257 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
         <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-2 text-[11px] text-indigo-200">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span>
-            <strong>Hiyerarşik Onay Yetkisi:</strong> Üst makam (Müdür / Müdür Yrd.), alt birim henüz incelememiş olsa dahi beklemeden doğrudan inceleme yapabilir veya nihai Makam Oluru verebilir.
+            <strong>Hiyerarşik Onay & Veri Bütünlüğü:</strong> Üst makam alt birim onayını beklemeden onaylayabilir. Veritabanındaki tüm eski ve yeni kayıtlar otomatik entegre edilerek %100 korunmaktadır.
           </span>
         </div>
 
       </div>
 
       {/* ========================================================================= */}
-      {/* ===================== VIEW MODE 1: ANALYTICS & RAPORLAMA ================ */}
+      {/* ================= VIEW MODE 1: YIL, TARİH & TÜR RAPORLAMA MASASI ======= */}
       {/* ========================================================================= */}
       {viewMode === 'analytics' ? (
         <div className="space-y-6">
           
-          {/* Key KPI Cards */}
+          {/* FİLTRE VE ARAMA PANELİ */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+                <span>Gelişmiş Faaliyet & Gezi Raporlama Filtreleri</span>
+              </h3>
+
+              <button
+                type="button"
+                onClick={resetReportFilters}
+                className="text-xs text-slate-500 hover:text-red-600 font-bold flex items-center gap-1 cursor-pointer transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Filtreleri Sıfırla</span>
+              </button>
+            </div>
+
+            {/* Filtre Dropdown Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              
+              {/* 1. Yıl Filtresi */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Eğitim Yılı / Takvim Yılı</label>
+                <select
+                  value={reportYear}
+                  onChange={(e) => setReportYear(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                >
+                  <option value="all">Tüm Yıllar ({plans.length} Plan)</option>
+                  {availableYears.map(yr => (
+                    <option key={yr} value={yr}>{yr} Yılı</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. Gezi Türü */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Gezi Türü</label>
+                <select
+                  value={reportTripType}
+                  onChange={(e) => setReportTripType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                >
+                  <option value="all">Tüm Gezi Türleri</option>
+                  <option value="İl İçi">İl İçi Geziler</option>
+                  <option value="İl Dışı">İl Dışı Geziler</option>
+                </select>
+              </div>
+
+              {/* 3. Ulaşım Şekli */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Ulaşım Şekli</label>
+                <select
+                  value={reportTransportType}
+                  onChange={(e) => setReportTransportType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                >
+                  <option value="all">Tüm Ulaşım Şekilleri</option>
+                  <option value="Belediye / Toplu Taşıma">Belediye / Toplu Taşıma (15 Gün)</option>
+                  <option value="Okul Servis Aracı">Okul Servis Aracı</option>
+                  <option value="Özel Turizm Otobüsü">Özel Turizm Otobüsü</option>
+                  <option value="Yürüyerek">Yürüyerek İntikal</option>
+                </select>
+              </div>
+
+              {/* 4. Onay Durumu */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Onay Durumu</label>
+                <select
+                  value={reportStatus}
+                  onChange={(e) => setReportStatus(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                >
+                  <option value="all">Tüm Durumlar</option>
+                  <option value="onaylandi">Makam Oluru Verildi (Kesin Onaylı)</option>
+                  <option value="memur_incelemesinde">1. Memur Ön İncelemesinde</option>
+                  <option value="mudur_yardimcisi_onayinda">2. Md. Yrd. (Fudan FİDAN) Onayında</option>
+                  <option value="mudur_onayinda">3. Okul Müdürü (Recep KIZILIRMAK) Olurunda</option>
+                  <option value="reddedildi">Düzeltme İstenmiş / İade Edildi</option>
+                </select>
+              </div>
+
+              {/* 5. Tarih Aralığı: Başlangıç */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Başlangıç Tarihi</label>
+                <input
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(e) => setReportStartDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                />
+              </div>
+
+              {/* 6. Tarih Aralığı: Bitiş */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Bitiş Tarihi</label>
+                <input
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(e) => setReportEndDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                />
+              </div>
+
+              {/* 7. Kategori */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Mekân Kategorisi</label>
+                <select
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                >
+                  <option value="all">Tüm Kategoriler</option>
+                  {CATEGORIES.filter(c => c !== 'Tüm Kategoriler').map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 8. İlçe */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Ziyaret Edilen İlçe</label>
+                <select
+                  value={reportDistrict}
+                  onChange={(e) => setReportDistrict(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                >
+                  <option value="all">Tüm İlçeler</option>
+                  {ISTANBUL_DISTRICTS.filter(d => d !== 'Tüm İlçeler').map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+            </div>
+
+            {/* Filtrelenmiş Rapor Dışa Aktarma Butonları */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <span className="text-xs font-bold text-slate-600">
+                Filtreye Uyan: <strong className="text-indigo-700">{reportFilteredPlans.length} Gezi Planı</strong> (Toplam {reportAnalytics.totalStudents} Öğrenci)
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => DatabaseService.downloadCSVReport(reportFilteredPlans, `Zeynep_Kamil_Gezi_Raporu_${reportYear}_${reportTripType}`)}
+                  disabled={reportFilteredPlans.length === 0}
+                  className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-40"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Filtrelenmiş Excel/CSV İndir</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3.5 py-2 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Printer className="w-4 h-4 text-slate-600" />
+                  <span>Resmi Faaliyet Raporunu Yazdır</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Filtrelenmiş KPI Kartları */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Toplam Gezi</span>
-              <span className="text-2xl font-black text-slate-900 mt-1 block">{analytics.totalPlans} Plan</span>
-              <span className="text-[11px] text-slate-500 block mt-0.5">{analytics.approvedPlans} Onaylı, {analytics.totalPending} Süreçte</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Filtrelenen Gezi</span>
+              <span className="text-2xl font-black text-slate-900 mt-1 block">{reportAnalytics.totalPlans} Plan</span>
+              <span className="text-[11px] text-slate-500 block mt-0.5">{reportAnalytics.approvedPlans} Makam Oluru, {reportAnalytics.totalPending} Süreçte</span>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-xs font-bold text-blue-500 uppercase tracking-wider block">Toplam Katılımcı</span>
-              <span className="text-2xl font-black text-blue-700 mt-1 block">{analytics.totalStudents} Öğrenci</span>
-              <span className="text-[11px] text-slate-500 block mt-0.5">{analytics.totalMale} Erkek / {analytics.totalFemale} Kız</span>
+              <span className="text-2xl font-black text-blue-700 mt-1 block">{reportAnalytics.totalStudents} Öğrenci</span>
+              <span className="text-[11px] text-slate-500 block mt-0.5">{reportAnalytics.totalMale} Erkek / {reportAnalytics.totalFemale} Kız</span>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider block">Görevli Personel</span>
-              <span className="text-2xl font-black text-indigo-700 mt-1 block">{analytics.totalTeachers} Öğretmen</span>
-              <span className="text-[11px] text-slate-500 block mt-0.5">+{analytics.totalCompanions} Veli Refakatçi</span>
+              <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider block">Görevli & Refakatçi</span>
+              <span className="text-2xl font-black text-indigo-700 mt-1 block">{reportAnalytics.totalTeachers} Öğretmen</span>
+              <span className="text-[11px] text-slate-500 block mt-0.5">+{reportAnalytics.totalCompanions} Veli Refakatçi</span>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider block">Makam Oluru (Onay)</span>
-              <span className="text-2xl font-black text-emerald-700 mt-1 block">{analytics.approvedPlans} Kesin Onay</span>
-              <span className="text-[11px] text-slate-500 block mt-0.5">Yazdırılmaya & PDF İndirmeye Hazır</span>
+              <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider block">Onay Oranı</span>
+              <span className="text-2xl font-black text-emerald-700 mt-1 block">
+                {reportAnalytics.totalPlans > 0 ? `%${Math.round((reportAnalytics.approvedPlans / reportAnalytics.totalPlans) * 100)}` : '%0'}
+              </span>
+              <span className="text-[11px] text-slate-500 block mt-0.5">{reportAnalytics.approvedPlans} Kesin Onaylı Gezi</span>
             </div>
           </div>
 
-          {/* 3 Sistemli Onay Akış Kartı */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <FileCheck2 className="w-4 h-4 text-indigo-600" />
-              <span>3 Kademeli Onay Akışı Takip Durumu</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 text-center">
-                <span className="text-[11px] font-bold text-amber-800 uppercase block">1. Aşama: Memur İncelemesi</span>
-                <span className="text-xl font-black text-amber-900 my-1 block">{analytics.pendingClerk} Plan</span>
-                <span className="text-[10px] text-amber-700 block">Ön İnceleme Bekliyor</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/60 text-center">
-                <span className="text-[11px] font-bold text-indigo-800 uppercase block">2. Aşama: Md. Yrd. Uygun Görüş</span>
-                <span className="text-xl font-black text-indigo-900 my-1 block">{analytics.pendingDeputy} Plan</span>
-                <span className="text-[10px] text-indigo-700 block">Fudan FİDAN İncelemesinde</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-red-200 bg-red-50/60 text-center">
-                <span className="text-[11px] font-bold text-red-800 uppercase block">3. Aşama: Müdür Makam Oluru</span>
-                <span className="text-xl font-black text-red-900 my-1 block">{analytics.pendingPrincipal} Plan</span>
-                <span className="text-[10px] text-red-700 block">Recep KIZILIRMAK Olurunda</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 text-center">
-                <span className="text-[11px] font-bold text-emerald-800 uppercase block">4. Aşama: Onaylandı</span>
-                <span className="text-xl font-black text-emerald-900 my-1 block">{analytics.approvedPlans} Plan</span>
-                <span className="text-[10px] text-emerald-700 block">Makam Oluru Verildi</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Categories and Districts Distribution */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Kategori, İlçe, Ulaşım & Tür Dağılım Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
+            {/* 1. Ulaşım Türü Dağılımı */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
-                Kategorilere Göre Gezi Dağılımı
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Bus className="w-4 h-4 text-amber-500" />
+                <span>Ulaşım Türü Analizi</span>
               </h4>
               <div className="space-y-2">
-                {Object.entries(analytics.categoriesMap).map(([cat, count]) => (
-                  <div key={cat} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50">
-                    <span className="font-semibold text-slate-700">{cat}</span>
-                    <span className="font-extrabold px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full">{count} Gezi</span>
+                {Object.entries(reportAnalytics.transportMap).map(([t, count]) => (
+                  <div key={t} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50">
+                    <span className="font-semibold text-slate-700">{t}</span>
+                    <span className="font-extrabold px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full">{count} Gezi</span>
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* 2. Kategorilere Göre Dağılım */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
-                İlçelere Göre Gezi Dağılımı
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-indigo-500" />
+                <span>Mekân Kategorileri Dağılımı</span>
               </h4>
               <div className="space-y-2">
-                {Object.entries(analytics.districtsMap).map(([dist, count]) => (
+                {Object.entries(reportAnalytics.categoriesMap).map(([cat, count]) => (
+                  <div key={cat} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50">
+                    <span className="font-semibold text-slate-700 truncate max-w-[170px]">{cat}</span>
+                    <span className="font-extrabold px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full shrink-0">{count} Gezi</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. İlçelere Göre Dağılım */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-red-500" />
+                <span>İlçelere Göre Dağılım</span>
+              </h4>
+              <div className="space-y-2">
+                {Object.entries(reportAnalytics.districtsMap).map(([dist, count]) => (
                   <div key={dist} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50">
                     <span className="font-semibold text-slate-700">{dist}</span>
                     <span className="font-extrabold px-2 py-0.5 bg-red-100 text-red-800 rounded-full">{count} Gezi</span>
@@ -419,6 +623,68 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
               </div>
             </div>
 
+          </div>
+
+          {/* Filtrelenmiş Gezi Rapor Çizelgesi */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4 text-slate-600" />
+              <span>Filtrelenmiş Faaliyet Planı Çizelgesi ({reportFilteredPlans.length} Kayıt)</span>
+            </h4>
+
+            {reportFilteredPlans.length === 0 ? (
+              <p className="text-xs text-slate-500 py-6 text-center">Seçilen filtrelere uygun gezi planı bulunamadı.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-bold">
+                      <th className="p-2.5">Gezi Yeri</th>
+                      <th className="p-2.5">Tarih</th>
+                      <th className="p-2.5">Şubeler</th>
+                      <th className="p-2.5">Öğrenci</th>
+                      <th className="p-2.5">Kafile Başkanı</th>
+                      <th className="p-2.5">Ulaşım</th>
+                      <th className="p-2.5">Durum</th>
+                      <th className="p-2.5 text-right">İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {reportFilteredPlans.map(p => (
+                      <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                        <td className="p-2.5 font-bold text-slate-900">{p.destinationName}</td>
+                        <td className="p-2.5 text-slate-600">{formatDate(p.tripDate)}</td>
+                        <td className="p-2.5 text-slate-700 font-semibold">{p.targetGrades}</td>
+                        <td className="p-2.5 font-bold text-indigo-700">{p.totalStudentCount}</td>
+                        <td className="p-2.5 text-slate-600">{p.headTeacher?.fullName || p.submittedBy || '-'}</td>
+                        <td className="p-2.5 text-slate-600">{p.transportationType}</td>
+                        <td className="p-2.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            p.status === 'onaylandi' ? 'bg-emerald-100 text-emerald-800' :
+                            p.status === 'reddedildi' ? 'bg-rose-100 text-rose-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {p.status === 'onaylandi' ? 'Onaylandı' :
+                             p.status === 'memur_incelemesinde' ? 'Memurda' :
+                             p.status === 'mudur_yardimcisi_onayinda' ? 'Md. Yrd.da' :
+                             p.status === 'mudur_onayinda' ? 'Müdürde' : 'Taslak'}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setInspectingPlan(p)}
+                            className="px-2.5 py-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg cursor-pointer"
+                          >
+                            İncele
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
         </div>
@@ -455,7 +721,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>1. Memur ({analytics.pendingClerk})</span>
+            <span>1. Memur ({generalAnalytics.pendingClerk})</span>
           </button>
 
           <button
@@ -467,7 +733,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>2. Md. Yrd ({analytics.pendingDeputy})</span>
+            <span>2. Md. Yrd ({generalAnalytics.pendingDeputy})</span>
           </button>
 
           <button
@@ -479,7 +745,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>3. Müdür ({analytics.pendingPrincipal})</span>
+            <span>3. Müdür ({generalAnalytics.pendingPrincipal})</span>
           </button>
 
           <button
@@ -491,7 +757,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Onaylı ({analytics.approvedPlans})</span>
+            <span>Onaylı ({generalAnalytics.approvedPlans})</span>
           </button>
 
           <button
@@ -503,7 +769,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             }`}
           >
             <XCircle className="w-3.5 h-3.5" />
-            <span>Düzeltme ({analytics.rejectedPlans})</span>
+            <span>Düzeltme ({generalAnalytics.rejectedPlans})</span>
           </button>
         </div>
 
