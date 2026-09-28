@@ -27,7 +27,6 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
         {/* Antet */}
         <div className="text-center font-bold uppercase space-y-1 mb-6">
           <p className="text-sm tracking-wide">T.C.</p>
-          <p className="text-sm tracking-wide">{data.city || '................'} VALİLİĞİ / İL MİLLÎ EĞİTİM MÜDÜRLÜĞÜ</p>
           <p className="text-sm tracking-wide">{data.district || '................'} KAYMAKAMLIĞI / İLÇE MİLLÎ EĞİTİM MÜDÜRLÜĞÜ</p>
           <p className="text-base font-extrabold tracking-wider mt-1">{data.schoolName || '................................ MÜDÜRLÜĞÜ'}</p>
         </div>
