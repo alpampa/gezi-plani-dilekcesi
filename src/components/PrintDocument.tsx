@@ -110,18 +110,49 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
             <tr className="border-b border-black">
               <td className="p-1.5 font-bold border-r border-black bg-gray-50">Gezi Tarihi ve Saati</td>
               <td className="p-1.5 border-r border-black font-semibold">{formatDate(data.tripDate)} | {data.departureTime} - {data.returnTime}</td>
-              <td className="p-1.5 font-bold border-r border-black bg-gray-50">Hedef Sınıflar</td>
-              <td className="p-1.5 font-semibold">{data.targetGrades}</td>
-            </tr>
-            <tr>
-              <td className="p-1.5 font-bold border-r border-black bg-gray-50">Öğrenci Sayıları</td>
-              <td className="p-1.5 border-r border-black">
-                Kız: <strong>{data.femaleStudentCount}</strong> | Erkek: <strong>{data.maleStudentCount}</strong> | Toplam: <strong className="underline">{data.totalStudentCount} Öğrenci</strong>
-              </td>
               <td className="p-1.5 font-bold border-r border-black bg-gray-50">Görevli Personel</td>
-              <td className="p-1.5">
+              <td className="p-1.5 font-semibold">
                 {1 + data.teachers.length} Öğretmen + {data.companions.length} Veli Refakatçi
               </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* SINIF BAZLI KATILIMCI TABLOSU */}
+        <div className="border-t border-black bg-gray-50 font-bold px-2 py-1 text-[10.5px] uppercase border-b border-black flex justify-between">
+          <span>Katılacak Sınıf ve Şubeler / Öğrenci Sayıları Dağılımı</span>
+          <span>Genel Toplam: {data.totalStudentCount} Öğrenci</span>
+        </div>
+        <table className="w-full border-collapse text-center text-[11px]">
+          <thead>
+            <tr className="border-b border-black bg-gray-100 font-bold text-[10px]">
+              <th className="p-1 border-r border-black w-8">S.N</th>
+              <th className="p-1 border-r border-black text-left pl-2">Sınıf / Şube Adı</th>
+              <th className="p-1 border-r border-black w-28">Erkek Öğrenci</th>
+              <th className="p-1 border-r border-black w-28">Kız Öğrenci</th>
+              <th className="p-1 w-32 font-black">Şube Toplamı</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(data.gradeRows && data.gradeRows.length > 0 ? data.gradeRows : [
+              { id: 'gr-1', gradeName: data.targetGrades || 'Belirtilmedi', maleCount: data.maleStudentCount, femaleCount: data.femaleStudentCount, totalCount: data.totalStudentCount }
+            ]).map((row, idx) => (
+              <tr key={row.id || idx} className="border-b border-black">
+                <td className="p-1 border-r border-black font-semibold">{idx + 1}</td>
+                <td className="p-1 border-r border-black text-left pl-2 font-bold">{row.gradeName || '-'}</td>
+                <td className="p-1 border-r border-black">{row.maleCount || 0}</td>
+                <td className="p-1 border-r border-black">{row.femaleCount || 0}</td>
+                <td className="p-1 font-bold">{row.totalCount || ((row.maleCount || 0) + (row.femaleCount || 0))}</td>
+              </tr>
+            ))}
+            {/* Toplam Satırı */}
+            <tr className="bg-gray-100 font-black text-[11.5px]">
+              <td colSpan={2} className="p-1.5 border-r border-black text-right pr-3 uppercase">
+                GENEL TOPLAM :
+              </td>
+              <td className="p-1.5 border-r border-black">{data.maleStudentCount} Erkek</td>
+              <td className="p-1.5 border-r border-black">{data.femaleStudentCount} Kız</td>
+              <td className="p-1.5 underline bg-gray-200">{data.totalStudentCount} ÖĞRENCİ</td>
             </tr>
           </tbody>
         </table>

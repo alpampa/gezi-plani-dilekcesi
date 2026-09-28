@@ -10,13 +10,13 @@ import {
   Trash2, 
   Edit3, 
   ShieldCheck, 
-  FileCheck2,
+  FileCheck2, 
   CheckCircle2,
   BookOpen,
   PlusCircle,
   Sparkles
 } from 'lucide-react';
-import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem } from '../types';
+import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem, GradeStudentRow } from '../types';
 import { TURKISH_CITIES, ISTANBUL_DISTRICTS, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
 import { CURRICULUM_DATA } from '../data/curriculum';
 
@@ -47,7 +47,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
   // Add single outcome to textarea
   const handleAddOutcome = (outcomeText: string) => {
     const existing = data.outcomes ? data.outcomes.trim() : '';
-    if (existing.includes(outcomeText)) return; // already added
+    if (existing.includes(outcomeText)) return;
     const updated = existing ? `${existing}\n${outcomeText}` : outcomeText;
     onChange({ outcomes: updated });
   };
@@ -64,22 +64,13 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
     onChange({ outcomes: updated });
   };
 
-  // Filtered preset locations based on city and category
+  // Filtered preset locations based on city, district, and category
   const filteredLocations = PRESET_LOCATIONS.filter(loc => {
     const cityMatch = !data.selectedCity || loc.city === data.selectedCity;
-    const catMatch = !data.destinationCategory || data.destinationCategory === 'Diğer / Liste Dışı Özel Mekân' || loc.category === data.destinationCategory;
-    return cityMatch && catMatch;
+    const districtMatch = !data.selectedDistrict || data.selectedDistrict === 'Tüm İlçeler' || loc.district === data.selectedDistrict;
+    const catMatch = !data.destinationCategory || data.destinationCategory === 'Tüm Kategoriler' || data.destinationCategory === 'Liste Dışı / Özel Etkinlik Alanı' || loc.category === data.destinationCategory;
+    return cityMatch && districtMatch && catMatch;
   });
-
-  // Handle number changes
-  const handleStudentCountChange = (field: 'maleStudentCount' | 'femaleStudentCount', value: number) => {
-    const male = field === 'maleStudentCount' ? value : data.maleStudentCount;
-    const female = field === 'femaleStudentCount' ? value : data.femaleStudentCount;
-    onChange({
-      [field]: value,
-      totalStudentCount: Number(male || 0) + Number(female || 0)
-    });
-  };
 
   // Preset location select
   const handleSelectPreset = (locId: string) => {
@@ -90,9 +81,67 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
         destinationAddress: found.address,
         destinationCategory: found.category,
         selectedCity: found.city,
+        selectedDistrict: found.district || data.selectedDistrict,
         courseName: found.suggestedCourses || data.courseName
       });
     }
+  };
+
+  // ================= GRADE ROWS (HER SINIF AYRI SATIR VE TOPLAMLAR) =================
+  const gradeRows = data.gradeRows && data.gradeRows.length > 0 
+    ? data.gradeRows 
+    : [{ id: 'gr-1', gradeName: data.targetGrades || '3-A', maleCount: data.maleStudentCount || 0, femaleCount: data.femaleStudentCount || 0, totalCount: data.totalStudentCount || 0 }];
+
+  const recalculateGradeTotals = (rows: GradeStudentRow[]) => {
+    const maleTotal = rows.reduce((acc, r) => acc + (Number(r.maleCount) || 0), 0);
+    const femaleTotal = rows.reduce((acc, r) => acc + (Number(r.femaleCount) || 0), 0);
+    const overallTotal = maleTotal + femaleTotal;
+    const targetNames = rows.map(r => r.gradeName.trim()).filter(Boolean).join(', ');
+
+    onChange({
+      gradeRows: rows,
+      maleStudentCount: maleTotal,
+      femaleStudentCount: femaleTotal,
+      totalStudentCount: overallTotal,
+      targetGrades: targetNames || data.targetGrades
+    });
+  };
+
+  const handleAddGradeRow = () => {
+    const newRow: GradeStudentRow = {
+      id: 'gr-' + Date.now(),
+      gradeName: '',
+      maleCount: 0,
+      femaleCount: 0,
+      totalCount: 0
+    };
+    const updated = [...gradeRows, newRow];
+    recalculateGradeTotals(updated);
+  };
+
+  const handleUpdateGradeRow = (index: number, field: keyof GradeStudentRow, value: any) => {
+    const updated = [...gradeRows];
+    const targetRow = { ...updated[index], [field]: value };
+    
+    if (field === 'maleCount' || field === 'femaleCount') {
+      const male = field === 'maleCount' ? (parseInt(value) || 0) : (targetRow.maleCount || 0);
+      const female = field === 'femaleCount' ? (parseInt(value) || 0) : (targetRow.femaleCount || 0);
+      targetRow.totalCount = male + female;
+    }
+    
+    updated[index] = targetRow;
+    recalculateGradeTotals(updated);
+  };
+
+  const handleRemoveGradeRow = (index: number) => {
+    if (gradeRows.length <= 1) {
+      // Don't remove last row, just clear
+      const resetRow: GradeStudentRow = { id: 'gr-1', gradeName: '', maleCount: 0, femaleCount: 0, totalCount: 0 };
+      recalculateGradeTotals([resetRow]);
+      return;
+    }
+    const updated = gradeRows.filter((_, i) => i !== index);
+    recalculateGradeTotals(updated);
   };
 
   // Teacher handlers
@@ -206,13 +255,13 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
             <div className="relative">
               <input
                 type="text"
-                list="city-options"
+                list="school-city-options"
                 value={data.city}
                 onChange={(e) => onChange({ city: e.target.value })}
                 placeholder="Örn: İstanbul"
                 className="w-full px-3.5 py-2 text-sm font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition bg-white"
               />
-              <datalist id="city-options">
+              <datalist id="school-city-options">
                 {TURKISH_CITIES.map(c => <option key={c} value={c} />)}
               </datalist>
             </div>
@@ -230,14 +279,14 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
             <div className="relative">
               <input
                 type="text"
-                list="district-options"
+                list="school-district-options"
                 value={data.district}
                 onChange={(e) => onChange({ district: e.target.value })}
                 placeholder="Örn: Üsküdar"
                 className="w-full px-3.5 py-2 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition bg-white text-slate-900"
               />
-              <datalist id="district-options">
-                {ISTANBUL_DISTRICTS.map(d => <option key={d} value={d} />)}
+              <datalist id="school-district-options">
+                {ISTANBUL_DISTRICTS.filter(d => d !== 'Tüm İlçeler').map(d => <option key={d} value={d} />)}
               </datalist>
             </div>
           </div>
@@ -333,7 +382,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                 2. Gezi Yeri / Etkinlik Alanı ve Türü
               </h2>
               <p className="text-xs sm:text-sm text-slate-500">
-                Mekânı hazır listeden seçebilir veya liste dışı istediğiniz etkinlik alanını serbestçe yazabilirsiniz
+                Mekânı il/ilçe ve kategori bazında filtreleyebilir veya liste dışı istediğiniz etkinlik alanını serbestçe yazabilirsiniz
               </p>
             </div>
           </div>
@@ -368,10 +417,12 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
         {/* Preset Selection Controls */}
         {data.destinationMode === 'preset' ? (
           <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 mb-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              
+              {/* İl Seçimi */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  İl Filtrele
+                  1. İl Seçiniz
                 </label>
                 <select
                   value={data.selectedCity}
@@ -387,9 +438,28 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                 </select>
               </div>
 
+              {/* İlçe Seçimi */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Kategori
+                  2. İlçe Seçiniz
+                </label>
+                <select
+                  value={data.selectedDistrict || 'Tüm İlçeler'}
+                  onChange={(e) => onChange({ selectedDistrict: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                >
+                  {ISTANBUL_DISTRICTS.map((dist) => (
+                    <option key={dist} value={dist}>
+                      {dist}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Kategori Seçimi */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  3. Kategori Seçiniz
                 </label>
                 <select
                   value={data.destinationCategory}
@@ -404,23 +474,25 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                 </select>
               </div>
 
+              {/* Hazır Mekanlar Listesi */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Hazır EBA / MEB Mekânları ({filteredLocations.length})
+                  4. Hazır EBA / MEB Mekânları ({filteredLocations.length})
                 </label>
                 <select
                   onChange={(e) => handleSelectPreset(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-emerald-300 bg-white text-emerald-900 font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-emerald-300 bg-white text-emerald-900 font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                   defaultValue=""
                 >
                   <option value="" disabled>-- Listeden Mekân Seçiniz --</option>
                   {filteredLocations.map((loc) => (
                     <option key={loc.id} value={loc.id}>
-                      {loc.name} ({loc.city})
+                      {loc.name} ({loc.district ? `${loc.district}/` : ''}{loc.city})
                     </option>
                   ))}
                 </select>
               </div>
+
             </div>
 
             <div className="flex items-center gap-2 text-xs text-emerald-700 font-medium">
@@ -450,7 +522,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                 onClick={() => onChange({
                   destinationName: 'Üsküdar Çamlıca Tabiat ve Yürüyüş Parkuru',
                   destinationAddress: 'Küçük Çamlıca Mah. Üsküdar / İstanbul',
-                  destinationCategory: 'Açık Hava / Spor / Doğa Parkuru'
+                  destinationCategory: 'Açık Hava / Spor / Doğa Macera Parkuru / İzcilik Alanı'
                 })}
                 className="px-2 py-1 text-[11px] font-medium bg-white hover:bg-amber-100/70 text-amber-900 rounded border border-amber-300 transition cursor-pointer"
               >
@@ -461,7 +533,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                 onClick={() => onChange({
                   destinationName: 'Üsküdar Belediyesi Gençlik ve Çocuk Sahnesi',
                   destinationAddress: 'Mimar Sinan Mah. Çavuşdere Cad. Üsküdar / İstanbul',
-                  destinationCategory: 'Sanat Galerisi / Tiyatro / Kültür Merkezi'
+                  destinationCategory: 'Sanat Galerisi / Tiyatro Sahnesi / Kültür Merkezi'
                 })}
                 className="px-2 py-1 text-[11px] font-medium bg-white hover:bg-amber-100/70 text-amber-900 rounded border border-amber-300 transition cursor-pointer"
               >
@@ -470,9 +542,9 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
               <button
                 type="button"
                 onClick={() => onChange({
-                  destinationName: 'Özel Kodlama & Robotik Tasarım Atölyesi',
+                  destinationName: 'Özel Robotik Tasarım ve Kodlama Atölyesi',
                   destinationAddress: 'Altunizade Mah. Kısıklı Cad. Üsküdar / İstanbul',
-                  destinationCategory: 'Üniversite / Teknokent / Laboratuvar'
+                  destinationCategory: 'Zanaat & Sanat Atölyesi / Robotik & Tasarım Atölyesi'
                 })}
                 className="px-2 py-1 text-[11px] font-medium bg-white hover:bg-amber-100/70 text-amber-900 rounded border border-amber-300 transition cursor-pointer"
               >
@@ -493,7 +565,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                 type="text"
                 value={data.destinationName}
                 onChange={(e) => onChange({ destinationName: e.target.value })}
-                placeholder="Örn: Rahmi M. Koç Müzesi, Çamlıca Parkı veya Özel Robotik Atölyesi"
+                placeholder="Örn: Bilim Üsküdar, Çamlıca Parkı veya Özel Robotik Atölyesi"
                 className="w-full pl-3.5 pr-8 py-2.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
               />
               <MapPin className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
@@ -562,7 +634,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
         </div>
       </section>
 
-      {/* 3. EĞİTİM, KAZANIMLAR VE MAARİF MODELİ BİLGİLERİ (GELİŞMİŞ KAZANIM SEÇİCİ) */}
+      {/* 3. EĞİTİM, KAZANIMLAR VE MAARİF MODELİ BİLGİLERİ */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 shadow-xs border border-slate-200">
         <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
           <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -635,8 +707,6 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
 
           {/* Sınıf / Kademe ve Ders Seçimi Dropdownları */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            
-            {/* 1. Sınıf Seçimi */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 1. Sınıf Düzeyi Seçiniz:
@@ -654,7 +724,6 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
               </select>
             </div>
 
-            {/* 2. Ders Seçimi */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 2. İlgili Dersi Seçiniz:
@@ -672,7 +741,6 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
               </select>
             </div>
 
-            {/* Hızlı Ders Adını Forma Aktar Butonu */}
             <div className="flex items-end">
               <button
                 type="button"
@@ -685,7 +753,6 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                 <span>Bu Dersi Form Alanına Yaz</span>
               </button>
             </div>
-
           </div>
 
           {/* Konu ve Kazanımlar Listesi */}
@@ -777,70 +844,151 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
         </div>
       </section>
 
-      {/* 4. KATILIMCI KADROSU VE ÖĞRENCİ SAYILARI */}
+      {/* 4. HEDEF SINIFLAR VE KATILIMCI SAYILARI (HER SINIF AYRI SATIRDA VE ALTTA TOPLAM) */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 shadow-xs border border-slate-200">
-        <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
-          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Users className="w-5 h-5" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                4. Hedef Sınıflar ve Katılımcı Sayıları (Sınıf Bazlı Dağılım)
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Her sınıfı ayrı satır olarak ekleyiniz; öğrenci sayıları ve genel toplam otomatik hesaplanır
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">
-              4. Hedef Sınıflar ve Katılımcı Sayıları
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              Geziye katılacak öğrenci şubeleri ve sayı dağılımları
-            </p>
-          </div>
+
+          <button
+            type="button"
+            onClick={handleAddGradeRow}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors cursor-pointer self-start sm:self-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Yeni Sınıf/Şube Ekle</span>
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Hedef Sınıf ve Şubeler <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={data.targetGrades}
-              onChange={(e) => onChange({ targetGrades: e.target.value })}
-              placeholder="Örn: 3-A, 3-B, 3-C Şubeleri veya Anasınıfı A Şubesi"
-              className="w-full px-3.5 py-2 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            />
+        {/* Sınıf Satırları Tablosu */}
+        <div className="space-y-3 mb-6">
+          <div className="hidden sm:grid grid-cols-12 gap-3 px-3 py-1 text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <div className="col-span-1 text-center">S.N</div>
+            <div className="col-span-4">Sınıf / Şube Adı</div>
+            <div className="col-span-2 text-center">Erkek Öğrenci</div>
+            <div className="col-span-2 text-center">Kız Öğrenci</div>
+            <div className="col-span-2 text-center">Şube Toplamı</div>
+            <div className="col-span-1 text-right">İşlem</div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Erkek Öğrenci Sayısı
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={data.maleStudentCount || ''}
-              onChange={(e) => handleStudentCountChange('maleStudentCount', parseInt(e.target.value) || 0)}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            />
-          </div>
+          {gradeRows.map((row, index) => (
+            <div 
+              key={row.id} 
+              className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 items-center hover:border-blue-200 transition-all"
+            >
+              {/* S.N */}
+              <div className="sm:col-span-1 text-center font-bold text-xs text-slate-400 hidden sm:block">
+                {index + 1}
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Kız Öğrenci Sayısı
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={data.femaleStudentCount || ''}
-              onChange={(e) => handleStudentCountChange('femaleStudentCount', parseInt(e.target.value) || 0)}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition"
-            />
-          </div>
+              {/* Sınıf Adı */}
+              <div className="sm:col-span-4">
+                <label className="block text-[11px] font-semibold text-slate-600 sm:hidden mb-1">
+                  Sınıf / Şube Adı:
+                </label>
+                <input
+                  type="text"
+                  value={row.gradeName}
+                  onChange={(e) => handleUpdateGradeRow(index, 'gradeName', e.target.value)}
+                  placeholder="Örn: Anasınıfı-A, 1-A, 3-B, vb."
+                  className="w-full px-3 py-2 text-sm font-bold text-slate-900 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-blue-900 mb-1">
-              Toplam Öğrenci
-            </label>
-            <div className="w-full px-3.5 py-2 text-sm font-bold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg flex items-center justify-between">
-              <span>{data.totalStudentCount} Kişi</span>
-              <span className="text-[10px] text-blue-500 uppercase font-bold">Oto</span>
+              {/* Erkek */}
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-600 sm:hidden mb-1">
+                  Erkek Sayısı:
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={row.maleCount || ''}
+                  onChange={(e) => handleUpdateGradeRow(index, 'maleCount', e.target.value)}
+                  placeholder="0"
+                  className="w-full px-3 py-2 text-sm font-semibold text-center rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              {/* Kız */}
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-600 sm:hidden mb-1">
+                  Kız Sayısı:
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={row.femaleCount || ''}
+                  onChange={(e) => handleUpdateGradeRow(index, 'femaleCount', e.target.value)}
+                  placeholder="0"
+                  className="w-full px-3 py-2 text-sm font-semibold text-center rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              {/* Şube Toplamı */}
+              <div className="sm:col-span-2 text-center">
+                <label className="block text-[11px] font-semibold text-slate-600 sm:hidden mb-1">
+                  Şube Toplamı:
+                </label>
+                <div className="w-full px-2 py-2 text-sm font-extrabold bg-blue-100/70 text-blue-900 rounded-lg border border-blue-200">
+                  {row.totalCount || 0} Öğrenci
+                </div>
+              </div>
+
+              {/* Sil */}
+              <div className="sm:col-span-1 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleRemoveGradeRow(index)}
+                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  title="Şubeyi Sil"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+          ))}
+        </div>
+
+        {/* ALT TOPLAM KARTLARI */}
+        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-xl p-4 sm:p-5 text-white shadow-md">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center">
+            
+            <div className="sm:col-span-1">
+              <span className="text-xs font-semibold text-blue-200 uppercase tracking-wider block">
+                Katılımcı Şubeler:
+              </span>
+              <span className="text-sm font-bold text-white truncate block mt-0.5">
+                {data.targetGrades || 'Şube Belirtilmedi'}
+              </span>
+            </div>
+
+            <div className="sm:col-span-1 bg-white/10 rounded-lg p-2.5 text-center border border-white/10">
+              <span className="text-[11px] text-blue-200 uppercase block font-semibold">Toplam Erkek</span>
+              <span className="text-lg font-black text-white">{data.maleStudentCount} Kişi</span>
+            </div>
+
+            <div className="sm:col-span-1 bg-white/10 rounded-lg p-2.5 text-center border border-white/10">
+              <span className="text-[11px] text-blue-200 uppercase block font-semibold">Toplam Kız</span>
+              <span className="text-lg font-black text-white">{data.femaleStudentCount} Kişi</span>
+            </div>
+
+            <div className="sm:col-span-1 bg-gradient-to-r from-red-600 to-rose-600 rounded-lg p-3 text-center shadow-md">
+              <span className="text-[11px] text-red-100 uppercase block font-bold">GENEL TOPLAM</span>
+              <span className="text-xl font-black text-white">{data.totalStudentCount} ÖĞRENCİ</span>
+            </div>
+
           </div>
         </div>
       </section>

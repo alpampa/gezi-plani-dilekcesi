@@ -1,3 +1,11 @@
+export interface GradeStudentRow {
+  id: string;
+  gradeName: string; // Örn: '3-A', 'Anasınıfı-B', '4-C'
+  maleCount: number;
+  femaleCount: number;
+  totalCount: number;
+}
+
 export interface GeziTeacher {
   id: string;
   fullName: string;
@@ -38,16 +46,18 @@ export interface GeziPlanData {
   deputyPrincipalName: string;
   
   // 2. Gezi Mekan & Türü
-  destinationCategory: string; // 'Müze' | 'Bilim Merkezi' | 'Tarihi / Ören Yeri' | 'Doğa / Park' | 'Kütüphane' | 'Sanat / Tiyatro' | 'Üniversite / Kurum' | 'Diğer'
+  destinationCategory: string;
   destinationMode: 'preset' | 'custom';
   selectedCity: string;
+  selectedDistrict: string; // Gezi yeri ilçe seçimi
   destinationName: string;
   destinationAddress: string;
   tripType: 'İl İçi' | 'İl Dışı';
   tripDuration: 'Günübirlik' | 'Konaklamalı';
   
-  // 3. Hedef Kitle & Katılımcılar
-  targetGrades: string; // örn: "3. ve 4. Sınıflar" veya "1-A, 1-B, 1-C"
+  // 3. Hedef Kitle & Katılımcılar (Her sınıf yeni satırda ve toplam)
+  targetGrades: string;
+  gradeRows: GradeStudentRow[];
   maleStudentCount: number;
   femaleStudentCount: number;
   totalStudentCount: number;
@@ -55,10 +65,10 @@ export interface GeziPlanData {
   totalCompanionCount: number;
   
   // 4. Eğitim & Kazanım Bilgileri
-  courseName: string; // örn: "Hayat Bilgisi", "Fen Bilimleri", "Sosyal Bilgiler"
+  courseName: string;
   subjectTopic: string;
   purpose: string;
-  outcomes: string; // Maarif Modeli / Müfredat Kazanımları
+  outcomes: string; // Öğrenme Çıktıları / Kazanımları
   
   // 5. Tarih, Zaman ve Ulaşım
   tripDate: string;
@@ -93,6 +103,7 @@ export interface GeziPlanData {
 export interface PresetLocation {
   id: string;
   city: string;
+  district?: string;
   category: string;
   name: string;
   address: string;

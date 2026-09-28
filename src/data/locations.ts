@@ -14,374 +14,587 @@ export const TURKISH_CITIES = [
 ];
 
 export const ISTANBUL_DISTRICTS = [
+  'Tüm İlçeler',
   'Üsküdar', 'Kadıköy', 'Ataşehir', 'Beşiktaş', 'Beyoğlu', 'Fatih', 'Sarıyer',
-  'Adalar', 'Arnavutköy', 'Avcılar', 'Bağcılar', 'Bahçelievler', 'Bakırköy', 'Başakşehir',
-  'Bayrampaşa', 'Beykoz', 'Beylikdüzü', 'Büyükçekmece', 'Çatalca', 'Çekmeköy', 'Esenler',
-  'Esenyurt', 'Eyüpsultan', 'Gaziosmanpaşa', 'Güngören', 'Kağıthane', 'Kartal',
-  'Küçükçekmece', 'Maltepe', 'Pendik', 'Sancaktepe', 'Silivri', 'Sultanbeyli', 'Sultangazi',
-  'Şile', 'Şişli', 'Tuzla', 'Ümraniye', 'Zeytinburnu'
+  'Eyüpsultan', 'Bakırköy', 'Şişli', 'Beykoz', 'Maltepe', 'Kartal', 'Pendik',
+  'Tuzla', 'Ümraniye', 'Çekmeköy', 'Sancaktepe', 'Sultanbeyli', 'Şile',
+  'Adalar', 'Arnavutköy', 'Avcılar', 'Bağcılar', 'Bahçelievler', 'Başakşehir',
+  'Bayrampaşa', 'Beylikdüzü', 'Büyükçekmece', 'Çatalca', 'Esenler', 'Esenyurt',
+  'Gaziosmanpaşa', 'Güngören', 'Kağıthane', 'Küçükçekmece', 'Silivri', 'Sultangazi', 'Zeytinburnu'
 ];
 
 export const CATEGORIES = [
-  'Müze',
-  'Bilim Merkezi / Rasathane',
-  'Tarihi Alan / Saray / Kale',
-  'Tabiat Parkı / Doğa / Botanik',
-  'Kütüphane / Arşiv',
-  'Sanat Galerisi / Tiyatro / Kültür Merkezi',
-  'Açık Hava / Spor / Doğa Parkuru',
-  'Üniversite / Teknokent / Laboratuvar',
-  'Kamu Kurumu / Fabrika / Üretim Tesisi',
+  'Tüm Kategoriler',
+  'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
+  'Bilim Merkezi & Planetaryum / Rasathane',
+  'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+  'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+  'Hayvanat Bahçesi / Akvaryum / Kelebek Bahçesi',
+  'Kütüphane / Arşiv / Dokümantasyon Merkezi',
+  'Sanat Galerisi / Tiyatro Sahnesi / Kültür Merkezi',
+  'Açık Hava / Spor / Doğa Macera Parkuru / İzcilik Alanı',
+  'Üniversite / Teknokent / Laboratuvar / Ar-Ge Merkezi',
+  'Kamu Kurumu / İtfaiye / Belediye / Meclis / Adliye',
+  'Fabrika / Sanayi Tesisi / Çiftlik & Tarım / Geri Dönüşüm',
+  'Zanaat & Sanat Atölyesi / Robotik & Tasarım Atölyesi',
+  'Manevi & Dini Mekan / Tarihi Cami / Külliye',
   'Liste Dışı / Özel Etkinlik Alanı'
 ];
 
 export const PRESET_LOCATIONS: PresetLocation[] = [
-  // İstanbul
+  // ==================== İSTANBUL - ÜSKÜDAR ====================
   {
-    id: 'ist-1',
+    id: 'usk-1',
     city: 'İstanbul',
-    category: 'Müze',
+    district: 'Üsküdar',
+    category: 'Bilim Merkezi & Planetaryum / Rasathane',
+    name: 'Bilim Üsküdar (Üsküdar Bilim Merkezi)',
+    address: 'Ünalan Mah. Mahmut Gazi Cad. No:1 Üsküdar / İstanbul',
+    description: 'Uzay ve havacılık sergi salonu, planetaryum gösterileri, teknoloji ve matematik atölyeleri.',
+    suitableGrades: 'Tüm Kademeler (Anasınıfı, 1, 2, 3, 4. Sınıflar)',
+    suggestedCourses: 'Fen Bilimleri, Matematik, Hayat Bilgisi, Bilişim Teknolojileri'
+  },
+  {
+    id: 'usk-2',
+    city: 'İstanbul',
+    district: 'Üsküdar',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Beylerbeyi Sarayı',
+    address: 'Beylerbeyi Mah. Abdullah Ağa Cad. Üsküdar / İstanbul',
+    description: 'Osmanlı devlet konukevi olarak kullanılan tarihi saray, bahçesi ve deniz köşkleri.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Hayat Bilgisi, Görsel Sanatlar'
+  },
+  {
+    id: 'usk-3',
+    city: 'İstanbul',
+    district: 'Üsküdar',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Küçük Çamlıca Tabiat Parkı ve Korusu',
+    address: 'Küçük Çamlıca Mah. Üsküdar / İstanbul',
+    description: 'Tarihi köşkler, zengin ağaç çeşitliliği, yürüyüş parkurları ve kuş gözlem alanı.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Fen Bilimleri, Beden Eğitimi'
+  },
+  {
+    id: 'usk-4',
+    city: 'İstanbul',
+    district: 'Üsküdar',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Büyük Çamlıca Tepesi ve Çamlıca Korusu',
+    address: 'Ferah Mah. Çamlıca Tepesi, Üsküdar / İstanbul',
+    description: 'İstanbul panoramik seyir noktası, anıt ağaçlar, çiçek parterleri ve açık hava etkinlik alanı.',
+    suitableGrades: 'Tüm Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, Görsel Sanatlar'
+  },
+  {
+    id: 'usk-5',
+    city: 'İstanbul',
+    district: 'Üsküdar',
+    category: 'Sanat Galerisi / Tiyatro Sahnesi / Kültür Merkezi',
+    name: 'Üsküdar Belediyesi Bağlarbaşı Kültür ve Sanat Merkezi',
+    address: 'Bağlarbaşı Mah. Üsküdar / İstanbul',
+    description: 'Tiyatro gösterileri, çocuk kütüphanesi, sergi salonları ve sanat atölyeleri.',
+    suitableGrades: 'Tüm Sınıflar',
+    suggestedCourses: 'Türkçe, Görsel Sanatlar, Müzik'
+  },
+  {
+    id: 'usk-6',
+    city: 'İstanbul',
+    district: 'Üsküdar',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Kız Kulesi Tarihi Müzesi',
+    address: 'Salacak Sahili Açıkları, Üsküdar / İstanbul',
+    description: 'İstanbul Boğazı’nın simgesi, tarihi deniz feneri ve etkileşimli dijital sergiler.',
+    suitableGrades: '2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, Türkçe'
+  },
+  {
+    id: 'usk-7',
+    city: 'İstanbul',
+    district: 'Üsküdar',
+    category: 'Kütüphane / Arşiv / Dokümantasyon Merkezi',
+    name: 'Nevmekân Sahil ve Nevmekân Selimiye Çocuk Kütüphaneleri',
+    address: 'Selimiye / Şemsipaşa Mah. Üsküdar / İstanbul',
+    description: 'Nitelikli çocuk kitaplığı koleksiyonu, okuma atölyeleri ve mimari miras.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Türkçe, Hayat Bilgisi, Sosyal Bilgiler'
+  },
+  {
+    id: 'usk-8',
+    city: 'İstanbul',
+    district: 'Üsküdar',
+    category: 'Manevi & Dini Mekan / Tarihi Cami / Külliye',
+    name: 'Mihrimah Sultan (İskele) ve Şemsi Paşa Külliyeleri',
+    address: 'Mimar Sinan Mah. İskele Meydanı, Üsküdar / İstanbul',
+    description: 'Mimar Sinan’ın eşsiz mimarlık mirası, tarihi medrese ve kütüphane yapıları.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Görsel Sanatlar, Din Kültürü'
+  },
+
+  // ==================== İSTANBUL - KADIKÖY & ATAŞEHİR ====================
+  {
+    id: 'kad-1',
+    city: 'İstanbul',
+    district: 'Kadıköy',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
+    name: 'İstanbul Oyuncak Müzesi',
+    address: 'Göztepe Mah. Ömerpaşa Cad. Dr. Zeki Zeren Sok. No:17 Kadıköy / İstanbul',
+    description: 'Sunay Akın tarafından kurulan, dünya tarihini oyuncaklarla anlatan tematik müze ve atölyeler.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, Görsel Sanatlar, Türkçe'
+  },
+  {
+    id: 'kad-2',
+    city: 'İstanbul',
+    district: 'Kadıköy',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Göztepe 60. Yıl Parkı ve Gül Bahçeleri',
+    address: 'Bağdat Cad. Göztepe, Kadıköy / İstanbul',
+    description: 'Tematik çocuk oyun alanları, akvaryum havuzları, bitki labirentleri ve lale bahçeleri.',
+    suitableGrades: 'Okul Öncesi, 1, 2, 3. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Fen Bilimleri, Beden Eğitimi'
+  },
+  {
+    id: 'kad-3',
+    city: 'İstanbul',
+    district: 'Kadıköy',
+    category: 'Sanat Galerisi / Tiyatro Sahnesi / Kültür Merkezi',
+    name: 'Kadıköy Belediyesi Çocuk Sanat Merkezi & Halis Kurtça Çocuk Kültür Merkezi',
+    address: 'Merdivenköy Mah. Ressam Salih Erimez Cad. Kadıköy / İstanbul',
+    description: 'Çocuklara yönelik görsel sanatlar, müzik, ritim ve tiyatro atölyeleri.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Görsel Sanatlar, Müzik, Hayat Bilgisi'
+  },
+  {
+    id: 'atash-1',
+    city: 'İstanbul',
+    district: 'Ataşehir',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Nezahat Gökyiğit Botanik Bahçesi (NGBB)',
+    address: 'Atatürk Mah. Ataşehir / İstanbul',
+    description: 'Türkiye’nin en zengin canlı bitki koleksiyonu, keşif patikaları, kurakçıl bitkiler ve eğitsel doğa atölyeleri.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Fen Bilimleri, Çevre Eğitimi'
+  },
+
+  // ==================== İSTANBUL - BEYOĞLU & FATİH ====================
+  {
+    id: 'bey-1',
+    city: 'İstanbul',
+    district: 'Beyoğlu',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
     name: 'Rahmi M. Koç Müzesi',
     address: 'Hasköy Cad. No:5 Hasköy, Beyoğlu / İstanbul',
-    description: 'Sanayi, ulaşım, iletişim ve bilim tarihi koleksiyonları ve interaktif deney atölyeleri.',
-    suitableGrades: 'Tüm Sınıflar (1-12)',
-    suggestedCourses: 'Fen Bilimleri, Sosyal Bilgiler, Hayat Bilgisi, Teknoloji ve Tasarım'
+    description: 'Sanayi, denizcilik, havacılık, karayolu ulaşımı, nostaljik tren ve renkli bilim deney atölyeleri.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Fen Bilimleri, Sosyal Bilgiler, Hayat Bilgisi, Matematik'
   },
   {
-    id: 'ist-2',
+    id: 'bey-2',
     city: 'İstanbul',
-    category: 'Tarihi Alan / Saray / Kale',
+    district: 'Beyoğlu',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Galata Kulesi Tarihi Müzesi',
+    address: 'Bereketzade Mah. Beyoğlu / İstanbul',
+    description: 'Bizans ve Ceneviz mirası gözetleme kulesi, Hezarfen Ahmet Çelebi sergisi ve tarihi panorama.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Hayat Bilgisi, Türkçe'
+  },
+  {
+    id: 'bey-3',
+    city: 'İstanbul',
+    district: 'Beyoğlu',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
+    name: 'Miniatürk (Minyatür Türkiye Parkı)',
+    address: 'Örnektepe Mah. İmrahor Cad. Beyoğlu / İstanbul',
+    description: 'Anadolu ve Osmanlı coğrafyasındaki 136 tarihi eserin 1/25 ölçekli maketleri ve masal parkı.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, Görsel Sanatlar'
+  },
+  {
+    id: 'fat-1',
+    city: 'İstanbul',
+    district: 'Fatih',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
     name: 'Topkapı Sarayı Müzesi',
     address: 'Cankurtaran Mah. Fatih / İstanbul',
-    description: 'Osmanlı İmparatorluğu yönetim merkezi, kutsal emanetler ve tarihi köşkler.',
-    suitableGrades: '3, 4, 5, 6, 7, 8, 9, 10, 11, 12. Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Türkçe, Görsel Sanatlar'
+    description: 'Osmanlı İmparatorluğu yönetim merkezi, kutsal emanetler, silah ve hazine koleksiyonları.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Tarih, Türkçe'
   },
   {
-    id: 'ist-3',
+    id: 'fat-2',
     city: 'İstanbul',
-    category: 'Bilim Merkezi / Rasathane',
-    name: 'Üsküdar Bilim Merkezi (Bilim Üsküdar)',
-    address: 'Ünalan Mah. Mahmut Gazi Cad. No:1 Üsküdar / İstanbul',
-    description: 'Astronomi ve uzay salonu, doğa bilimleri, matematik ve robotik atölyeleri.',
-    suitableGrades: 'İlkokul ve Ortaokul (1-8. Sınıflar)',
-    suggestedCourses: 'Fen Bilimleri, Matematik, Bilişim Teknolojileri'
-  },
-  {
-    id: 'ist-4',
-    city: 'İstanbul',
-    category: 'Müze',
+    district: 'Fatih',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
     name: 'İstanbul Arkeoloji Müzeleri',
-    address: 'Osman Hamdi Bey Yokuşu, Gülhane / Fatih / İstanbul',
-    description: 'Antik çağ eserleri, İskender Lahdi ve Mezopotamya tarihi.',
-    suitableGrades: '4, 5, 6, 7, 8, Lise',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Görsel Sanatlar'
+    address: 'Osman Hamdi Bey Yokuşu, Gülhane Parkı İçi, Fatih / İstanbul',
+    description: 'İskender Lahdi, antik uygarlıklar, çocuk arkeoloji müzesi ve çinili köşk.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Görsel Sanatlar, Hayat Bilgisi'
   },
   {
-    id: 'ist-5',
+    id: 'fat-3',
     city: 'İstanbul',
-    category: 'Tarihi Alan / Saray / Kale',
+    district: 'Fatih',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Yerebatan Sarnıcı Müzesi',
+    address: 'Alemdar Mah. Yerebatan Cad. Fatih / İstanbul',
+    description: 'Erken Bizans su mimarisi, Medusa başları sütunları ve ışık gösterileri.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Fen Bilimleri, Hayat Bilgisi'
+  },
+  {
+    id: 'fat-4',
+    city: 'İstanbul',
+    district: 'Fatih',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Gülhane Parkı ve İslam Bilim ve Teknoloji Tarihi Müzesi',
+    address: 'Gülhane Parkı İçi, Cankurtaran Mah. Fatih / İstanbul',
+    description: 'Prof. Dr. Fuat Sezgin İslam Bilim Tarihi icatları, planetaryum ve asırlık çınar ağaçları.',
+    suitableGrades: '2, 3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Fen Bilimleri, Matematik'
+  },
+  {
+    id: 'fat-5',
+    city: 'İstanbul',
+    district: 'Fatih',
+    category: 'Manevi & Dini Mekan / Tarihi Cami / Külliye',
+    name: 'Ayasofya-i Kebir Cami-i Şerifi ve Sultanahmet Meydanı',
+    address: 'Sultanahmet Meydanı, Fatih / İstanbul',
+    description: 'Dünya mimarlık tarihinin başyapıtı, Dikilitaş ve tarihi hipodrom alanı.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Görsel Sanatlar'
+  },
+
+  // ==================== İSTANBUL - BEŞİKTAŞ & SARIYER ====================
+  {
+    id: 'bes-1',
+    city: 'İstanbul',
+    district: 'Beşiktaş',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
     name: 'Dolmabahçe Sarayı',
     address: 'Vişnezade Mah. Dolmabahçe Cad. Beşiktaş / İstanbul',
-    description: 'Son dönem Osmanlı saray mimarisi ve Atatürk’ün ebediyete intikal ettiği mekan.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, T.C. İnkılap Tarihi ve Atatürkçülük, Hayat Bilgisi'
+    description: 'Atatürk’ün ebediyete intikal ettiği mekan, Selamlık, Muayede Salonu ve Saray Koleksiyonları Müzesi.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, T.C. İnkılap Tarihi'
   },
   {
-    id: 'ist-6',
+    id: 'bes-2',
     city: 'İstanbul',
-    category: 'Tabiat Parkı / Doğa / Botanik',
-    name: 'Nezahat Gökyiğit Botanik Bahçesi (NGBB)',
-    address: 'Ataşehir / İstanbul',
-    description: 'Zengin bitki çeşitliliği, kurakçıl bitkiler alanı, keşif patikaları.',
-    suitableGrades: 'Okul Öncesi, İlkokul, Ortaokul',
+    district: 'Beşiktaş',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
+    name: 'İstanbul Deniz Müzesi',
+    address: 'Sinanpaşa Mah. Beşiktaş Meydanı, Beşiktaş / İstanbul',
+    description: 'Tarihi saltanat kayıkları, kadırgalar, Çaka Bey ve Barbaros Hayrettin Paşa mirası.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, Fen Bilimleri'
+  },
+  {
+    id: 'bes-3',
+    city: 'İstanbul',
+    district: 'Beşiktaş',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Yıldız Parkı ve Şale Köşkü Korusu',
+    address: 'Yıldız Mah. Çırağan Cad. Beşiktaş / İstanbul',
+    description: 'Tarihi Yıldız Sarayı bahçesi, göletler, asma köprüler ve zengin fauna-flora gözlem alanı.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Hayat Bilgisi, Fen Bilimleri, Çevre Eğitimi'
+  },
+  {
+    id: 'sar-1',
+    city: 'İstanbul',
+    district: 'Sarıyer',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Atatürk Arboretumu (Canlı Ağaç Müzesi)',
+    address: 'Kemer Mah. Bahçeköy, Sarıyer / İstanbul',
+    description: 'Dünyanın dört bir yanından getirilen 2000\'i aşkın ağaç ve odunsu bitki türü, gölet ekosistemi.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
     suggestedCourses: 'Fen Bilimleri, Hayat Bilgisi, Biyoloji'
   },
   {
-    id: 'ist-7',
+    id: 'sar-2',
     city: 'İstanbul',
-    category: 'Müze',
-    name: 'Panorama 1453 Tarih Müzesi',
-    address: 'Merkezefendi Mah. Topkapı Kültür Parkı İçi, Zeytinburnu / İstanbul',
-    description: 'İstanbul\'un fethinin 3 boyutlu ses ve kubbe görselleriyle anlatımı.',
-    suitableGrades: '3, 4, 5, 6, 7, 8. Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih'
+    district: 'Sarıyer',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Emirgan Korusu ve Lale Müzesi',
+    address: 'Emirgan Mah. Sarıyer / İstanbul',
+    description: 'Sarı, Pembe ve Beyaz Köşkler, gölet, sincaplar ve geleneksel Lale Festivali alanı.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Hayat Bilgisi, Görsel Sanatlar, Fen Bilimleri'
   },
   {
-    id: 'ist-8',
+    id: 'sar-3',
     city: 'İstanbul',
-    category: 'Kütüphane / Arşiv',
-    name: 'Rami Kütüphanesi',
-    address: 'Yeni Mah. Rami Kışla Cad. Eyüpsultan / İstanbul',
-    description: 'Türkiye\'nin en büyük kütüphane komplekslerinden biri, çocuk kütüphanesi ve atölyeler.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Türkçe, Edebiyat, Araştırma ve Bilgi Becerileri'
-  },
-  {
-    id: 'ist-9',
-    city: 'İstanbul',
-    category: 'Tabiat Parkı / Doğa / Botanik',
-    name: 'Atatürk Arboretumu',
-    address: 'Kemer Mah. Bahçeköy, Sarıyer / İstanbul',
-    description: 'Canlı ağaç müzesi, göletler ve mevsimsel doğa gözlem alanı.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Çevre Eğitimi, Hayat Bilgisi'
-  },
-  {
-    id: 'ist-10',
-    city: 'İstanbul',
-    category: 'Müze',
-    name: 'Havacılık Müzesi (Yeşilköy)',
-    address: 'Yeşilköy Mah. Bakırköy / İstanbul',
-    description: 'Türk Hava Kuvvetleri uçakları, helikopterler ve havacılık tarihi.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Sosyal Bilgiler, Fizik'
+    district: 'Sarıyer',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Rumeli Hisarı Müzesi',
+    address: 'Yahya Kemal Cad. Sarıyer / İstanbul',
+    description: 'Fatih Sultan Mehmet tarafından Boğaz güvenliği için 90 günde inşa edilen tarihi hisar ve açık hava tiyatrosu.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Hayat Bilgisi'
   },
 
-  // Ankara
+  // ==================== İSTANBUL - EYÜPSULTAN & ZEYTİNBURNU ====================
+  {
+    id: 'eyup-1',
+    city: 'İstanbul',
+    district: 'Eyüpsultan',
+    category: 'Kütüphane / Arşiv / Dokümantasyon Merkezi',
+    name: 'Rami Kütüphanesi ve Çocuk Etkinlik Alanları',
+    address: 'Yeni Mah. Rami Kışla Cad. Eyüpsultan / İstanbul',
+    description: '0-3 yaş, 3-6 yaş ve ilkokul çocuk kütüphaneleri, masal odaları, botanik iç avlu ve dijital atölyeler.',
+    suitableGrades: 'Tüm Kademeler (Anasınıfı, 1, 2, 3, 4. Sınıflar)',
+    suggestedCourses: 'Türkçe, Hayat Bilgisi, Sosyal Bilgiler, Görsel Sanatlar'
+  },
+  {
+    id: 'eyup-2',
+    city: 'İstanbul',
+    district: 'Eyüpsultan',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Pierre Loti Tepesi ve Haliç Seyir Terası',
+    address: 'Eyüp Merkez Mah. İdris Köşkü Cad. Eyüpsultan / İstanbul',
+    description: 'Teleferik yolculuğu ile Haliç panoramik izleme, tarihi mezarlık servileri ve edebi miras.',
+    suitableGrades: '2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, Türkçe'
+  },
+  {
+    id: 'zey-1',
+    city: 'İstanbul',
+    district: 'Zeytinburnu',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
+    name: 'Panorama 1453 Tarih Müzesi',
+    address: 'Merkezefendi Mah. Topkapı Kültür Parkı İçi, Zeytinburnu / İstanbul',
+    description: 'İstanbul\'un fethini 360 derece kubbe resmi ve ses efektleriyle yaşatan tam panoramik müze.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Tarih, Türkçe'
+  },
+  {
+    id: 'zey-2',
+    city: 'İstanbul',
+    district: 'Zeytinburnu',
+    category: 'Tabiat Parkı / Doğa Parkuru / Botanik & Arboryum',
+    name: 'Zeytinburnu Tıbbi Bitkiler Bahçesi',
+    address: 'Merkezefendi Mah. Yeniçiftlik Yolu Cad. Zeytinburnu / İstanbul',
+    description: 'Türkiye\'nin ilk tıbbi bitkiler bahçesi, şifalı otlar, sera ve doğal kompost atölyeleri.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Fen Bilimleri, Hayat Bilgisi, Çevre Eğitimi'
+  },
+
+  // ==================== İSTANBUL - BAKIRKÖY & ŞİŞLİ ====================
+  {
+    id: 'bak-1',
+    city: 'İstanbul',
+    district: 'Bakırköy',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
+    name: 'Hava Kuvvetleri Havacılık Müzesi (Yeşilköy)',
+    address: 'Yeşilköy Mah. Eski Havaalanı Cad. Bakırköy / İstanbul',
+    description: 'Askeri uçaklar, helikopterler, radar sistemleri, pilot kıyafetleri ve uçuş simülatörleri.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Fen Bilimleri, Sosyal Bilgiler, Fizik, Hayat Bilgisi'
+  },
+  {
+    id: 'bak-2',
+    city: 'İstanbul',
+    district: 'Bakırköy',
+    category: 'Hayvanat Bahçesi / Akvaryum / Kelebek Bahçesi',
+    name: 'İstanbul Akvaryum (Florya)',
+    address: 'Şenlikköy Mah. Yeşilköy Halkalı Cad. No:93 Florya, Bakırköy / İstanbul',
+    description: 'Karadeniz\'den Pasifik\'e tematik 17 coğrafi alan, Amazon yağmur ormanı ve köpekbalıkları.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Fen Bilimleri, Coğrafya'
+  },
+  {
+    id: 'sis-1',
+    city: 'İstanbul',
+    district: 'Şişli',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
+    name: 'Askeri Müze ve Kültür Sitesi Komutanlığı (Harbiye)',
+    address: 'Halaskargazi Mah. Vali Konağı Cad. Harbiye, Şişli / İstanbul',
+    description: 'Mehteran gösterisi, tarihi çadırlar, zırhlar, kılıçlar ve Atatürk’ün Harbiye sınıfı.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Müzik, Tarih'
+  },
+  {
+    id: 'sis-2',
+    city: 'İstanbul',
+    district: 'Şişli',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Atatürk Müzesi (Şişli Atatürk Evi)',
+    address: 'Halaskargazi Cad. No:140 Şişli / İstanbul',
+    description: 'Mustafa Kemal Paşa’nın 1919 Samsun’a çıkış hazırlıklarını yürüttüğü tarihi üç katlı ev.',
+    suitableGrades: '2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, T.C. İnkılap Tarihi'
+  },
+
+  // ==================== ANKARA MEB MEKANLARI ====================
   {
     id: 'ank-1',
     city: 'Ankara',
-    category: 'Tarihi Alan / Saray / Kale',
+    district: 'Çankaya',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
     name: 'Anıtkabir ve Atatürk ve Kurtuluş Savaşı Müzesi',
     address: 'Anıttepe, Çankaya / Ankara',
-    description: 'Gazi Mustafa Kemal Atatürk\'ün ebedi istirahatgahı, milli mücadele panoramaları.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'T.C. İnkılap Tarihi, Sosyal Bilgiler, Hayat Bilgisi, Tarih'
+    description: 'Gazi Mustafa Kemal Atatürk\'ün ebedi istirahatgâhı, milli mücadele panoramaları ve tonozlu galeriler.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Hayat Bilgisi, Sosyal Bilgiler, T.C. İnkılap Tarihi, Türkçe'
   },
   {
     id: 'ank-2',
     city: 'Ankara',
-    category: 'Tarihi Alan / Saray / Kale',
-    name: 'I. ve II. TBMM Kurtuluş Savaşı ve Cumhuriyet Müzeleri',
+    district: 'Altındağ',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'I. TBMM Kurtuluş Savaşı Müzesi ve II. TBMM Cumhuriyet Müzesi',
     address: 'Ulus Meydanı, Altındağ / Ankara',
-    description: 'Cumhuriyetin ilan edildiği tarihi meclis binaları ve meclis zabıtları.',
-    suitableGrades: '3. Sınıftan İtibaren Tüm Kademeler',
-    suggestedCourses: 'Sosyal Bilgiler, T.C. İnkılap Tarihi, Tarih'
+    description: 'Cumhuriyetin kurulduğu tarihi meclis binası, ilk sıralar, zabıt cerideleri ve Atatürk ilkeleri.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, T.C. İnkılap Tarihi, Türkçe'
   },
   {
     id: 'ank-3',
     city: 'Ankara',
-    category: 'Müze',
+    district: 'Altındağ',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
     name: 'Anadolu Medeniyetleri Müzesi',
     address: 'Kale Mah. Gözcü Sok. No:2 Ulus, Altındağ / Ankara',
-    description: 'Paleolitik çağdan günümüze Anadolu tarihi, Çatalhöyük ve Hitit eserleri.',
-    suitableGrades: '4, 5, 6, 7, 8, 9, 10, 11, 12. Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Görsel Sanatlar'
+    description: 'Çatalhöyük, Hitit Güneşi, Frig ve Urartu eserleri; Avrupa Yılın Müzesi ödüllü koleksiyon.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Görsel Sanatlar, Tarih'
   },
   {
     id: 'ank-4',
     city: 'Ankara',
-    category: 'Müze',
+    district: 'Çankaya',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
     name: 'MTA Şehit Cuma Dağ Tabiat Tarihi Müzesi',
     address: 'Üniversiteler Mah. Dumlupınar Bulvarı No:139 Çankaya / Ankara',
-    description: 'Dinozor iskeletleri, fosiller, madenler, taşlar ve uzay kubbesi.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Coğrafya, Biyoloji, Hayat Bilgisi'
+    description: 'Dinozor iskeletleri, Maraş Fili, kayaçlar, madenler, fosiller ve planetaryum kubbesi.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Fen Bilimleri, Hayat Bilgisi, Coğrafya'
   },
   {
     id: 'ank-5',
     city: 'Ankara',
-    category: 'Bilim Merkezi / Rasathane',
-    name: 'Ali Kuşçu Gökbilim Merkezi',
-    address: 'Mamak / Ankara',
-    description: 'Planetaryum gösterileri, astronot simülasyonları ve robotik kodlama.',
-    suitableGrades: '1-8. Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Astronomi, Bilişim Teknolojileri'
+    district: 'Çankaya',
+    category: 'Kütüphane / Arşiv / Dokümantasyon Merkezi',
+    name: 'Cumhurbaşkanlığı Millet Kütüphanesi ve Çocuk Kütüphaneleri',
+    address: 'Cumhurbaşkanlığı Külliyesi, Beştepe / Ankara',
+    description: 'Nasreddin Hoca Çocuk Kütüphanesi, Gençlik Kütüphanesi, teknoloji ve sanat atölyeleri.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Türkçe, Sosyal Bilgiler, Fen Bilimleri'
   },
   {
     id: 'ank-6',
     city: 'Ankara',
-    category: 'Kütüphane / Arşiv',
-    name: 'Cumhurbaşkanlığı Millet Kütüphanesi',
-    address: 'Cumhurbaşkanlığı Külliyesi, Beştepe / Ankara',
-    description: 'Selçuklu ve Nasreddin Hoca Çocuk Kütüphaneleri, teknoloji atölyeleri.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Türkçe, Edebiyat, Sosyal Bilimler'
+    district: 'Mamak',
+    category: 'Bilim Merkezi & Planetaryum / Rasathane',
+    name: 'Ali Kuşçu Gökbilim Merkezi',
+    address: 'Mamak / Ankara',
+    description: 'Planetaryum, astronot simülasyonları, robotik kodlama ve uzay atölyeleri.',
+    suitableGrades: '1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Fen Bilimleri, Astronomi, Matematik'
   },
 
-  // İzmir
-  {
-    id: 'izm-1',
-    city: 'İzmir',
-    category: 'Tarihi Alan / Saray / Kale',
-    name: 'Efes Antik Kenti ve Müzesi',
-    address: 'Selçuk / İzmir',
-    description: 'Celsus Kütüphanesi, Antik Tiyatro, Yamaç Evler ve Arkeoloji Müzesi.',
-    suitableGrades: '4. Sınıf ve Üzeri',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Felsefe'
-  },
-  {
-    id: 'izm-2',
-    city: 'İzmir',
-    category: 'Bilim Merkezi / Rasathane',
-    name: 'Uzay Kampı Türkiye (Space Camp Turkey)',
-    address: 'Ege Serbest Bölgesi, Gaziemir / İzmir',
-    description: 'Uzay mekiği simülatörü, astronot eğitim donanımları ve astronomi.',
-    suitableGrades: '3-12. Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Fizik, Astronomi ve Uzay Bilimleri'
-  },
-  {
-    id: 'izm-3',
-    city: 'İzmir',
-    category: 'Tabiat Parkı / Doğa / Botanik',
-    name: 'İzmir Doğal Yaşam Parkı (Sasalı)',
-    address: 'Sasalı, Çiğli / İzmir',
-    description: 'Avrupa\'nın sayılı doğal yaşam alanlarından biri, biyolojik çeşitlilik.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Hayat Bilgisi, Biyoloji'
-  },
-
-  // Bursa
+  // ==================== BURSA, İZMİR, ÇANAKKALE, KONYA, GAZİANTEP ====================
   {
     id: 'bur-1',
     city: 'Bursa',
-    category: 'Bilim Merkezi / Rasathane',
+    district: 'Osmangazi',
+    category: 'Bilim Merkezi & Planetaryum / Rasathane',
     name: 'GUHEM - Gökmen Uzay Havacılık Eğitim Merkezi',
     address: 'Demirtaş Dumlupınar OSB Mah. Osmangazi / Bursa',
-    description: 'Avrupa\'nın en büyük uzay ve havacılık temalı interaktif eğitim merkezi.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Fizik, Teknoloji ve Tasarım'
+    description: 'Avrupa\'nın en büyük interaktif uzay ve havacılık merkezi, uçuş simülatörleri, Ay yürüyüşü.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Fen Bilimleri, Matematik, Teknoloji'
   },
   {
     id: 'bur-2',
     city: 'Bursa',
-    category: 'Müze',
-    name: 'Bursa Bilim ve Teknoloji Merkezi (BTM)',
-    address: 'Altınova Mah. Fuar Cad. Osmangazi / Bursa',
-    description: 'Uygulamalı deney düzenekleri, planetaryum ve bilimsel atölyeler.',
-    suitableGrades: '1-8. Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Matematik, Teknoloji'
-  },
-  {
-    id: 'bur-3',
-    city: 'Bursa',
-    category: 'Tarihi Alan / Saray / Kale',
+    district: 'Osmangazi',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
     name: 'Panorama 1326 Bursa Fetih Müzesi',
     address: 'Ebu İshak Mah. Osmangazi / Bursa',
-    description: 'Dünyanın en büyük tam panoramik müzesi, Osmanlı’nın kuruluş dönemi.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih'
+    description: 'Dünyanın en büyük tam panoramik müzesi, Osmanlı’nın kuruluş dönemi ve çevre dostu yeşil bina.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Sosyal Bilgiler, Tarih, Türkçe'
   },
-
-  // Çanakkale
   {
     id: 'can-1',
     city: 'Çanakkale',
-    category: 'Tarihi Alan / Saray / Kale',
-    name: 'Çanakkale Savaşları Gelibolu Tarihi Alanı ve Şehitlikler',
-    address: 'Eceabat / Çanakkale',
-    description: 'Şehitler Abidesi, Conkbayırı, 57. Alay Şehitliği ve Hilal-i Ahmer Müzesi.',
-    suitableGrades: '4. Sınıftan İtibaren Tüm Kademeler',
-    suggestedCourses: 'Sosyal Bilgiler, T.C. İnkılap Tarihi, Tarih, Türkçe'
+    district: 'Eceabat',
+    category: 'Tarihi Alan / Saray / Kasır / Kale / Anıt / Şehitlik',
+    name: 'Çanakkale Şehitler Abidesi ve Tarihi Alan Ziyaretçi Merkezi',
+    address: 'Gelibolu Yarımadası Tarihi Alanı, Eceabat / Çanakkale',
+    description: '57. Alay Şehitliği, Conkbayırı, Seyit Onbaşı Heykeli ve Hilal-i Ahmer Canlandırma Müzesi.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, T.C. İnkılap Tarihi, Türkçe'
   },
   {
     id: 'can-2',
     city: 'Çanakkale',
-    category: 'Müze',
+    district: 'Merkez',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
     name: 'Troya Müzesi ve Ören Yeri',
     address: 'Tevfikiye Köyü, Merkez / Çanakkale',
-    description: 'UNESCO Dünya Mirası Troya efsanesi ve ödüllü çağdaş müze binası.',
-    suitableGrades: '4-12. Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Görsel Sanatlar'
+    description: 'UNESCO Dünya Mirası ödüllü çağdaş müze binası, Homeros destanları ve arkeoloji atölyeleri.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Görsel Sanatlar, Tarih'
   },
-
-  // Konya
+  {
+    id: 'izm-1',
+    city: 'İzmir',
+    district: 'Gaziemir',
+    category: 'Bilim Merkezi & Planetaryum / Rasathane',
+    name: 'Uzay Kampı Türkiye (Space Camp Turkey)',
+    address: 'Ege Serbest Bölgesi, Gaziemir / İzmir',
+    description: 'Astronot eğitim simülatörleri, uzay mekiği görevi, yerçekimsiz ortam hissi ve teleskop gözlemi.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Fen Bilimleri, Astronomi, Teknoloji'
+  },
+  {
+    id: 'izm-2',
+    city: 'İzmir',
+    district: 'Çiğli',
+    category: 'Hayvanat Bahçesi / Akvaryum / Kelebek Bahçesi',
+    name: 'İzmir Doğal Yaşam Parkı (Sasalı)',
+    address: 'Sasalı, Çiğli / İzmir',
+    description: 'Yaban hayatının korunması, 130\'dan fazla hayvan türü, tropik merkez ve göletler.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
+    suggestedCourses: 'Hayat Bilgisi, Fen Bilimleri, Biyoloji'
+  },
   {
     id: 'kon-1',
     city: 'Konya',
-    category: 'Bilim Merkezi / Rasathane',
+    district: 'Selçuklu',
+    category: 'Bilim Merkezi & Planetaryum / Rasathane',
     name: 'Konya Bilim Merkezi',
     address: 'Büyükkayacık Mah. Ankara Cad. Selçuklu / Konya',
-    description: 'TÜBİTAK destekli planetaryum, vücudumuz, temel adımlar ve dünya sergileri.',
-    suitableGrades: 'Tüm Sınıflar',
+    description: 'TÜBİTAK destekli bilim merkezi, planetaryum, temel bilimler, vücudumuz ve uzay sergisi.',
+    suitableGrades: 'Anasınıfı, 1, 2, 3, 4. Sınıflar',
     suggestedCourses: 'Fen Bilimleri, Matematik, Teknoloji'
   },
   {
     id: 'kon-2',
     city: 'Konya',
-    category: 'Müze',
-    name: 'Mevlana Müzesi',
-    address: 'Aziziye Mah. Mevlana Cad. Karatay / Konya',
-    description: 'Mevlevi kültürü, tarihi el yazmaları ve Selçuklu mimarisi.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Din Kültürü ve Ahlak Bilgisi, Sosyal Bilgiler, Türkçe'
-  },
-  {
-    id: 'kon-3',
-    city: 'Konya',
-    category: 'Tabiat Parkı / Doğa / Botanik',
-    name: 'Konya Tropikal Kelebek Bahçesi',
+    district: 'Selçuklu',
+    category: 'Hayvanat Bahçesi / Akvaryum / Kelebek Bahçesi',
+    name: 'Konya Tropikal Kelebek Bahçesi ve Böcek Müzesi',
     address: 'Parsana Mah. İsmail Kaya Cad. Selçuklu / Konya',
-    description: 'Avrupa\'nın en büyük tropikal kelebek uçuş alanı ve böcek müzesi.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Hayat Bilgisi, Biyoloji'
+    description: 'Binlerce serbest uçan tropikal kelebek, böcek köyü ve botanik yağmur ormanı atmosferi.',
+    suitableGrades: 'Tüm Kademeler',
+    suggestedCourses: 'Fen Bilimleri, Hayat Bilgisi, Çevre Eğitimi'
   },
-
-  // Gaziantep
   {
     id: 'gaz-1',
     city: 'Gaziantep',
-    category: 'Müze',
+    district: 'Şehitkamil',
+    category: 'Müze (Tarih, Sanat, Arkeoloji, Denizcilik, Havacılık)',
     name: 'Zeugma Mozaik Müzesi',
     address: 'Mithatpaşa Mah. Hacı Sani Konukoğlu Bulvarı Şehitkamil / Gaziantep',
-    description: 'Çingene Kızı mozaiği, Roma dönemi villaları ve zengin mozaik koleksiyonu.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Görsel Sanatlar'
-  },
-  {
-    id: 'gaz-2',
-    city: 'Gaziantep',
-    category: 'Bilim Merkezi / Rasathane',
-    name: 'Müzeyyen Erkul Gaziantep Bilim Merkezi',
-    address: 'Şehitkamil / Gaziantep',
-    description: 'Havacılık, uzay, yapay zeka ve temel bilimler atölyeleri.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Matematik, Bilişim Teknolojileri'
-  },
-
-  // Antalya
-  {
-    id: 'ant-1',
-    city: 'Antalya',
-    category: 'Müze',
-    name: 'Antalya Müzesi',
-    address: 'Bahçelievler Mah. Konyaaltı Cad. Muratpaşa / Antalya',
-    description: 'Perge heykelleri, lahitler ve zengin Akdeniz arkeolojisi.',
-    suitableGrades: '4-12. Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Görsel Sanatlar'
-  },
-  {
-    id: 'ant-2',
-    city: 'Antalya',
-    category: 'Tabiat Parkı / Doğa / Botanik',
-    name: 'Düden Şelalesi Tabiat Parkı',
-    address: 'Varsak Mah. Kepez / Antalya',
-    description: 'Doğal kanyon oluşumu, su kaynakları ve biyolojik çeşitlilik gözlemi.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Hayat Bilgisi, Fen Bilimleri, Coğrafya'
-  },
-
-  // Trabzon
-  {
-    id: 'tra-1',
-    city: 'Trabzon',
-    category: 'Tarihi Alan / Saray / Kale',
-    name: 'Sümela Manastırı',
-    address: 'Altındere Vadisi, Maçka / Trabzon',
-    description: 'Kayaya oyulmuş tarihi manastır ve Altındere Milli Parkı doğal zenginliği.',
-    suitableGrades: 'Tüm Sınıflar',
-    suggestedCourses: 'Sosyal Bilgiler, Tarih, Coğrafya'
-  },
-  {
-    id: 'tra-2',
-    city: 'Trabzon',
-    category: 'Bilim Merkezi / Rasathane',
-    name: 'Trabzon Özdemir Bayraktar Bilim Merkezi',
-    address: 'Ortahisar / Trabzon',
-    description: 'Tasarım, havacılık, robotik ve doğa bilimleri atölyeleri.',
-    suitableGrades: '1-8. Sınıflar',
-    suggestedCourses: 'Fen Bilimleri, Teknoloji, Matematik'
+    description: 'Çingene Kızı mozaiği, Roma dönemi villaları, antik mozaik restorasyon atölyesi.',
+    suitableGrades: '3, 4. Sınıflar',
+    suggestedCourses: 'Sosyal Bilgiler, Görsel Sanatlar, Tarih'
   }
 ];
 
@@ -395,22 +608,32 @@ export const INITIAL_EMPTY_PLAN = {
   principalName: 'Ahmet YILMAZ',
   deputyPrincipalName: 'Mehmet DEMİR',
   
-  destinationCategory: 'Müze',
+  destinationCategory: 'Tüm Kategoriler',
   destinationMode: 'preset' as const,
   selectedCity: 'İstanbul',
+  selectedDistrict: 'Üsküdar',
   destinationName: '',
   destinationAddress: '',
   tripType: 'İl İçi' as const,
   tripDuration: 'Günübirlik' as const,
   
-  targetGrades: '',
+  targetGrades: '3-A ve 3-B Şubeleri',
+  gradeRows: [
+    {
+      id: 'gr-1',
+      gradeName: '3-A',
+      maleCount: 0,
+      femaleCount: 0,
+      totalCount: 0
+    }
+  ],
   maleStudentCount: 0,
   femaleStudentCount: 0,
   totalStudentCount: 0,
   totalTeacherCount: 2,
   totalCompanionCount: 2,
   
-  courseName: 'Hayat Bilgisi / Sosyal Bilgiler',
+  courseName: 'Hayat Bilgisi (Maarif Modeli)',
   subjectTopic: '',
   purpose: '',
   outcomes: '',
@@ -425,7 +648,7 @@ export const INITIAL_EMPTY_PLAN = {
   driverName: 'Mustafa KAYA',
   driverPhone: '0532 000 00 00',
   transportCompany: 'Lider Turizm & Taşımacılık Ltd. Şti.',
-  travelRoute: 'Okul -> 15 Temmuz Şehitler Köprüsü -> Hasköy Sahil Yolu -> Müze Alanı -> Okul',
+  travelRoute: 'Okul -> Gezi Güzergâhı -> Etkinlik Alanı -> Okul',
   
   headTeacher: {
     id: 'ht-1',
@@ -513,17 +736,34 @@ export const INITIAL_EMPTY_PLAN = {
 export const SAMPLE_POPULATED_PLAN = {
   ...INITIAL_EMPTY_PLAN,
   targetGrades: '3-A ve 3-B Şubeleri',
+  gradeRows: [
+    {
+      id: 'gr-1',
+      gradeName: '3-A',
+      maleCount: 10,
+      femaleCount: 11,
+      totalCount: 21
+    },
+    {
+      id: 'gr-2',
+      gradeName: '3-B',
+      maleCount: 9,
+      femaleCount: 10,
+      totalCount: 19
+    }
+  ],
+  maleStudentCount: 19,
+  femaleStudentCount: 21,
+  totalStudentCount: 40,
   destinationMode: 'preset' as const,
   selectedCity: 'İstanbul',
-  destinationName: 'Rahmi M. Koç Müzesi',
-  destinationAddress: 'Hasköy Cad. No:5 Hasköy, Beyoğlu / İstanbul',
-  courseName: 'Fen Bilimleri & Sosyal Bilgiler',
-  subjectTopic: 'Geçmişten Günümüze Ulaşım ve İletişim Teknolojileri / Bilimsel Keşifler',
-  purpose: 'Öğrencilerin teknolojik araçların tarihsel gelişimini yerinde gözlemlemeleri, sanayi ve bilim mirasını keşfetmeleri, müze bilinci kazanmaları.',
-  outcomes: 'FB.3.4. Geçmişte ve günümüzde kullanılan teknolojik ürünleri karşılaştırır.\nSB.3.2. Çevresindeki tarihi ve kültürel mekânların önemini fark eder.\nHB.3.5. Ortak kullanım alanlarında güvenlik ve nezaket kurallarına uyar.',
-  maleStudentCount: 18,
-  femaleStudentCount: 20,
-  totalStudentCount: 38,
+  selectedDistrict: 'Üsküdar',
+  destinationName: 'Bilim Üsküdar (Üsküdar Bilim Merkezi)',
+  destinationAddress: 'Ünalan Mah. Mahmut Gazi Cad. No:1 Üsküdar / İstanbul',
+  courseName: 'Fen Bilimleri (Maarif Modeli)',
+  subjectTopic: 'Uzay, Havacılık ve Temel Bilimler Keşif Yolculuğu',
+  purpose: 'Öğrencilerin interaktif düzenekler ile deneyimleyerek öğrenmeleri, astronomi ve uzay bilimlerine ilgi duymaları, bilim merkezleri farkındalığı kazanmaları.',
+  outcomes: 'FB.3.4.ÖÇ1. Geçmişte ve günümüzde kullanılan teknolojik ürünleri bilim merkezinde deney düzenekleriyle keşfeder.\nFB.3.1.ÖÇ1. Dünya\'nın katmanlarını ve uzay teknolojilerini planetaryum gösterisinde inceler.\nHB.3.5.ÖÇ1. Bilim merkezlerinde grup kurallarına ve güvenlik yönergelerine uyar.',
   headTeacher: {
     id: 'ht-1',
     fullName: 'Ali Serkan KAYA',
@@ -539,13 +779,6 @@ export const SAMPLE_POPULATED_PLAN = {
       branch: 'Sınıf Öğretmeni (3-B)',
       role: 'Görevli Öğretmen',
       phone: '0542 987 65 43'
-    },
-    {
-      id: 't-2',
-      fullName: 'Murat AKSOY',
-      branch: 'Rehberlik / Psikolojik Danışman',
-      role: 'Rehber Öğretmen',
-      phone: '0505 444 55 66'
     }
   ]
 };
