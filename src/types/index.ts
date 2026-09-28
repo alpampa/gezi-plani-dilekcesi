@@ -142,6 +142,40 @@ export interface GeziPlanData {
   
   // 9. Güvenlik & İlkyardım Tedbirleri
   safetyMeasures: string;
+
+  // 10. Gezi Sonrası Değerlendirme Raporu (MEB Sosyal Etkinlikler Yönetmeliği)
+  postTripEvaluation?: PostTripEvaluation;
+}
+
+export type AttainmentLevel = 'tamamen' | 'buyuk_olcude' | 'kismen' | 'yetersiz';
+export type QualityLevel = 'cok_iyi' | 'iyi' | 'orta' | 'yetersiz';
+export type SafetyLevel = 'sorunsuz' | 'kucuk_aksaklik' | 'onemli_aksaklik';
+export type RecommendationLevel = 'kesinlikle_tavsiye' | 'tavsiye_edilir' | 'sartli_tavsiye' | 'tavsiye_edilmez';
+
+export interface PostTripEvaluation {
+  evaluatedAt: string; // ISO Tarih
+  evaluatedBy: string; // Değerlendiren Kafile Başkanı / Öğretmen
+  actualStudentCount: number; // Fiili Katılan Öğrenci Sayısı
+  actualTeacherCount: number; // Fiili Katılan Görevli Öğretmen Sayısı
+  actualCompanionCount: number; // Fiili Katılan Veli / Refakatçi Sayısı
+  
+  // Kazanım & Maarif Modeli Çıktıları
+  outcomesAttainmentLevel: AttainmentLevel;
+  outcomesEvaluationNotes: string; // Öğrenme çıktılarına ulaşılma düzeyi açıklaması
+  
+  // Öğrenci & Etkinlik Alanı
+  studentInterestAndDiscipline: QualityLevel; // Öğrenci ilgi ve disiplin
+  venueEducationalSuitability: QualityLevel; // Mekânın eğitsel uygunluğu ve rehberlik
+  organizationAndTransport: QualityLevel; // Ulaşım, zamanlama ve organizasyon
+  safetyAndHealthStatus: SafetyLevel; // Güvenlik ve ilkyardım tedbirleri
+  safetyNotes?: string;
+  
+  // Sonuç & Öneriler
+  problemsEncountered: string; // Karşılaşılan sorunlar / güçlükler
+  suggestionsAndRecommendations: string; // Gelecek yıllar için öneriler
+  overallRating: number; // 1-5 yıldız
+  recommendationStatus: RecommendationLevel; // Tavsiye durumu
+  summaryConclusion: string; // Genel sonuç & kanaat raporu
 }
 
 export interface PresetLocation {

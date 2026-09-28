@@ -3,6 +3,7 @@ import type { GeziPlanData, AuthUser } from '../types';
 import { checkTripDeadlineRule, DatabaseService } from '../services/db';
 import { generateAndDownloadPlanPDF } from '../services/pdf';
 import { CATEGORIES, ISTANBUL_DISTRICTS } from '../data/locations';
+import { PostTripEvaluationModal } from './PostTripEvaluationModal';
 import { 
   Building2, 
   CheckCircle2, 
@@ -32,7 +33,8 @@ import {
   FileDown,
   AlertTriangle,
   RotateCcw,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Star
 } from 'lucide-react';
 
 interface AdminApprovalPanelProps {
@@ -89,6 +91,10 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   const [reportCategory, setReportCategory] = useState<string>('all');
   const [reportDistrict, setReportDistrict] = useState<string>('all');
   const [reportStatus, setReportStatus] = useState<string>('all');
+  const [reportEvalStatus, setReportEvalStatus] = useState<string>('all');
+
+  // Değerlendirme Modalı
+  const [evaluatingPlan, setEvaluatingPlan] = useState<GeziPlanData | null>(null);
 
   // Detaylı İnceleme Modalı (Üzerine tıklayınca açılan)
   const [inspectingPlan, setInspectingPlan] = useState<GeziPlanData | null>(null);
@@ -177,6 +183,8 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
     if (reportCategory !== 'all' && p.destinationCategory !== reportCategory) return false;
     if (reportDistrict !== 'all' && p.selectedDistrict !== reportDistrict) return false;
     if (reportStatus !== 'all' && p.status !== reportStatus) return false;
+    if (reportEvalStatus === 'evaluated' && !p.postTripEvaluation) return false;
+    if (reportEvalStatus === 'not_evaluated' && p.postTripEvaluation) return false;
     return true;
   });
 
@@ -191,6 +199,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
     setReportCategory('all');
     setReportDistrict('all');
     setReportStatus('all');
+    setReportEvalStatus('all');
   };
 
   const formatDate = (dateStr: string) => {
@@ -511,6 +520,20 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                 </select>
               </div>
 
+              {/* 9. Değerlendirme Durumu */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Değerlendirme Durumu</label>
+                <select
+                  value={reportEvalStatus}
+                  onChange={(e) => setReportEvalStatus(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-semibold"
+                >
+                  <option value="all">Tümü (Değerlendirilmiş & Bekleyen)</option>
+                  <option value="evaluated">✅ Değerlendirildi (Raporlu)</option>
+                  <option value="not_evaluated">⏳ Değerlendirilmedi (Bekliyor)</option>
+                </select>
+              </div>
+
             </div>
 
             {/* Filtrelenmiş Rapor Dışa Aktarma Butonları */}
@@ -544,7 +567,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
           </div>
 
           {/* Filtrelenmiş KPI Kartları */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Filtrelenen Gezi</span>
               <span className="text-2xl font-black text-slate-900 mt-1 block">{reportAnalytics.totalPlans} Plan</span>
@@ -569,6 +592,16 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                 {reportAnalytics.totalPlans > 0 ? `%${Math.round((reportAnalytics.approvedPlans / reportAnalytics.totalPlans) * 100)}` : '%0'}
               </span>
               <span className="text-[11px] text-slate-500 block mt-0.5">{reportAnalytics.approvedPlans} Kesin Onaylı Gezi</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block">Gezi Değerlendirme</span>
+              <span className="text-2xl font-black text-emerald-950 mt-1 block">
+                {reportAnalytics.evaluatedCount} / {reportAnalytics.approvedPlans} Rapor
+              </span>
+              <span className="text-[11px] text-emerald-700 block mt-0.5">
+                {reportAnalytics.evaluatedCount > 0 ? `Ortalama: ⭐ ${reportAnalytics.averageRating}/5` : 'Henüz rapor girilmedi'}
+              </span>
             </div>
           </div>
 
@@ -646,6 +679,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       <th className="p-2.5">Kafile Başkanı</th>
                       <th className="p-2.5">Ulaşım</th>
                       <th className="p-2.5">Durum</th>
+                      <th className="p-2.5">Değerlendirme</th>
                       <th className="p-2.5 text-right">İşlem</th>
                     </tr>
                   </thead>
@@ -670,7 +704,36 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                              p.status === 'mudur_onayinda' ? 'Müdürde' : 'Taslak'}
                           </span>
                         </td>
-                        <td className="p-2.5 text-right">
+                        <td className="p-2.5">
+                          {p.postTripEvaluation ? (
+                            <button
+                              type="button"
+                              onClick={() => setEvaluatingPlan(p)}
+                              className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 hover:bg-emerald-200 cursor-pointer shadow-xs transition"
+                              title="MEB Gezi Sonuç Değerlendirme Raporunu Aç"
+                            >
+                              <Star className="w-3 h-3 text-amber-500 fill-amber-400" />
+                              <span>⭐ {p.postTripEvaluation.overallRating}/5</span>
+                            </button>
+                          ) : p.status === 'onaylandi' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                              Değerlendirilmedi
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[10px]">-</span>
+                          )}
+                        </td>
+                        <td className="p-2.5 text-right flex items-center justify-end gap-1">
+                          {p.postTripEvaluation && (
+                            <button
+                              type="button"
+                              onClick={() => setEvaluatingPlan(p)}
+                              className="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg cursor-pointer"
+                              title="Gezi Sonrası Değerlendirme Raporunu Gör"
+                            >
+                              Rapor
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => setInspectingPlan(p)}
@@ -887,6 +950,26 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                         <span>{deadlineCheck.message}</span>
                       </span>
 
+                      {/* Değerlendirme Rozeti */}
+                      {plan.postTripEvaluation ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEvaluatingPlan(plan);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                          title="Gezi Değerlendirme Raporunu Aç"
+                        >
+                          <Star className="w-3 h-3 text-amber-500 fill-amber-400" />
+                          <span>⭐ {plan.postTripEvaluation.overallRating}/5 Değerlendirildi</span>
+                        </button>
+                      ) : isApproved ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          <span>Değerlendirilmedi (Bekliyor)</span>
+                        </span>
+                      ) : null}
+
                       <span className="text-xs text-slate-400 font-medium">
                         Talep: {formatDate(plan.createdAt?.split('T')[0] || '')}
                       </span>
@@ -1074,6 +1157,19 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       <FileDown className="w-3.5 h-3.5 text-red-600" />
                       <span>PDF İndir</span>
                     </button>
+
+                    {/* Gezi Sonrası Değerlendirme Raporu Butonu */}
+                    {plan.postTripEvaluation && (
+                      <button
+                        type="button"
+                        onClick={() => setEvaluatingPlan(plan)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition cursor-pointer"
+                        title="Gezi Değerlendirme Raporunu İncele & Yazdır"
+                      >
+                        <FileCheck2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Değerlendirme Raporu</span>
+                      </button>
+                    )}
 
                     {/* Resmi Yazdır Butonu */}
                     <button
@@ -1290,6 +1386,67 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                 </div>
               )}
 
+              {/* MEB Gezi Sonrası Değerlendirme Raporu Durumu */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                    <FileCheck2 className="w-4 h-4 text-emerald-600" />
+                    <span>MEB Gezi Sonrası Değerlendirme Raporu (Ek-8)</span>
+                  </h5>
+
+                  {inspectingPlan.postTripEvaluation ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 shadow-xs">
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                      <span>Değerlendirildi ({inspectingPlan.postTripEvaluation.overallRating}/5)</span>
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+                      Değerlendirme Bekleniyor
+                    </span>
+                  )}
+                </div>
+
+                {inspectingPlan.postTripEvaluation ? (
+                  <div className="space-y-2.5 pt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">Fiili Katılan:</span>
+                        <strong className="text-slate-900">{inspectingPlan.postTripEvaluation.actualStudentCount} Öğrenci</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">Kazanım Düzeyi:</span>
+                        <strong className="text-slate-900 capitalize">{inspectingPlan.postTripEvaluation.outcomesAttainmentLevel}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">Güvenlik:</span>
+                        <strong className="text-emerald-700 capitalize">{inspectingPlan.postTripEvaluation.safetyAndHealthStatus}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold">Tavsiye:</span>
+                        <strong className="text-indigo-700 capitalize">{inspectingPlan.postTripEvaluation.recommendationStatus}</strong>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs italic text-slate-700">
+                      "{inspectingPlan.postTripEvaluation.summaryConclusion}"
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setEvaluatingPlan(inspectingPlan)}
+                      className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm flex items-center gap-2 cursor-pointer transition"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Tam Değerlendirme Raporunu Aç & Yazdır</span>
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    * Bu gezi için henüz öğretmen/kafile başkanı tarafından gezi sonrası değerlendirme formu doldurulmamıştır. Gezi gerçekleştikten sonra öğretmen portalından doldurulup idare incelemesine sunulacaktır.
+                  </p>
+                )}
+              </div>
+
               {/* Onay Karar ve Not Yazma Alanı */}
               <div className="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-200 space-y-3">
                 <label className="block text-xs font-bold text-indigo-950 uppercase tracking-wider">
@@ -1455,6 +1612,23 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ================ GEZİ SONRASI DEĞERLENDİRME RAPORU MODALI ============== */}
+      {/* ========================================================================= */}
+      {evaluatingPlan && (
+        <PostTripEvaluationModal
+          isOpen={!!evaluatingPlan}
+          onClose={() => setEvaluatingPlan(null)}
+          plan={evaluatingPlan}
+          currentUser={currentUser}
+          onSaveEvaluation={(planId, evaluation) => {
+            DatabaseService.savePostTripEvaluation(planId, evaluation);
+            setEvaluatingPlan(null);
+          }}
+          readOnly={true}
+        />
       )}
 
     </div>

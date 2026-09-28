@@ -1,4 +1,4 @@
-import type { GeziPlanData, PlanStatus } from '../types';
+import type { GeziPlanData, PlanStatus, PostTripEvaluation } from '../types';
 
 const STORAGE_KEY = 'odos_gezi_plani_saved_records_v1';
 const GITHUB_CONFIG_KEY = 'odos_gezi_github_sync_config_v1';
@@ -431,7 +431,8 @@ export function normalizePlanData(raw: any): GeziPlanData {
     preTripNotes: raw.preTripNotes || '',
     duringTripNotes: raw.duringTripNotes || '',
     postTripNotes: raw.postTripNotes || '',
-    safetyMeasures: raw.safetyMeasures || ''
+    safetyMeasures: raw.safetyMeasures || '',
+    postTripEvaluation: raw.postTripEvaluation || undefined
   };
 }
 
@@ -621,6 +622,26 @@ export const DatabaseService = {
     return { success: true, data: target };
   },
 
+  // Gezi Sonrası Değerlendirme Raporunu Kaydet / Güncelle (MEB Sosyal Etkinlikler Yönetmeliği)
+  savePostTripEvaluation(
+    planId: string,
+    evaluation: PostTripEvaluation
+  ): { success: boolean; data?: GeziPlanData; error?: string } {
+    const plans = this.getPlans();
+    const idx = plans.findIndex(p => p.id === planId);
+    if (idx === -1) return { success: false, error: 'Plan bulunamadı' };
+
+    const target = { ...plans[idx] };
+    target.postTripEvaluation = evaluation;
+    target.updatedAt = new Date().toISOString();
+
+    plans[idx] = target;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+    this.syncWithGitHub(plans).catch(err => console.warn('GitHub Sync uyarısı:', err));
+
+    return { success: true, data: target };
+  },
+
   // GitHub Sync Yapılandırmasını getir
   getGitHubConfig(): GitHubSyncConfig {
     try {
@@ -784,6 +805,13 @@ export const DatabaseService = {
       yearsMap[year] = (yearsMap[year] || 0) + 1;
     });
 
+    // Gezi Sonrası Değerlendirme İstatistikleri
+    const evaluatedPlans = plans.filter(p => !!p.postTripEvaluation);
+    const evaluatedCount = evaluatedPlans.length;
+    const notEvaluatedCount = approvedPlans - evaluatedCount > 0 ? approvedPlans - evaluatedCount : 0;
+    const totalRatingSum = evaluatedPlans.reduce((sum, p) => sum + (p.postTripEvaluation?.overallRating || 0), 0);
+    const averageRating = evaluatedCount > 0 ? Number((totalRatingSum / evaluatedCount).toFixed(1)) : 0;
+
     return {
       totalPlans,
       pendingClerk,
@@ -801,7 +829,10 @@ export const DatabaseService = {
       districtsMap,
       transportMap,
       tripTypeMap,
-      yearsMap
+      yearsMap,
+      evaluatedCount,
+      notEvaluatedCount,
+      averageRating
     };
   },
 
@@ -829,7 +860,11 @@ export const DatabaseService = {
       'Kayıt Tarihi',
       'Memur İnceleyen',
       'Müdür Yrd Onaylayan',
-      'Müdür Onaylayan'
+      'Müdür Onaylayan',
+      'Değerlendirme Durumu',
+      'Değerlendirme Puanı',
+      'Kazanım Ulaşılma Düzeyi',
+      'Tavsiye Durumu'
     ];
 
     const rows = plans.map(p => [
@@ -854,7 +889,11 @@ export const DatabaseService = {
       p.createdAt?.split('T')[0] || '',
       `"${p.clerkReviewedBy || ''}"`,
       `"${p.deputyApprovedBy || ''}"`,
-      `"${p.principalApprovedBy || ''}"`
+      `"${p.principalApprovedBy || ''}"`,
+      p.postTripEvaluation ? '"Değerlendirildi"' : '"Değerlendirilmedi"',
+      p.postTripEvaluation ? `${p.postTripEvaluation.overallRating} / 5` : '""',
+      p.postTripEvaluation ? `"${p.postTripEvaluation.outcomesAttainmentLevel}"` : '""',
+      p.postTripEvaluation ? `"${p.postTripEvaluation.recommendationStatus}"` : '""'
     ]);
 
     const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');

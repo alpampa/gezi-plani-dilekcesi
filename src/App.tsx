@@ -8,7 +8,8 @@ import { ApprovalModal } from './components/ApprovalModal';
 import { AdminApprovalPanel } from './components/AdminApprovalPanel';
 import { GitHubSyncModal } from './components/GitHubSyncModal';
 import { AuthLoginScreen } from './components/AuthLoginScreen';
-import type { GeziPlanData, UserRole, AuthUser } from './types';
+import { PostTripEvaluationModal } from './components/PostTripEvaluationModal';
+import type { GeziPlanData, UserRole, AuthUser, PostTripEvaluation } from './types';
 import { INITIAL_EMPTY_PLAN, SAMPLE_POPULATED_PLAN } from './data/locations';
 import { 
   DatabaseService, 
@@ -61,6 +62,7 @@ export function App() {
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isGitHubSyncOpen, setIsGitHubSyncOpen] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [evaluatingPlan, setEvaluatingPlan] = useState<GeziPlanData | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
   // Load saved plans on mount
@@ -248,6 +250,21 @@ export function App() {
     DatabaseService.deletePlan(id);
     refreshPlans();
     showToast('Plan kaydı veritabanından silindi.', 'info');
+  };
+
+  // Gezi Sonrası Değerlendirme Kaydetme
+  const handleSaveEvaluation = (planId: string, evaluation: PostTripEvaluation) => {
+    const res = DatabaseService.savePostTripEvaluation(planId, evaluation);
+    if (res.success && res.data) {
+      refreshPlans();
+      if (currentPlan.id === planId) {
+        setCurrentPlan(res.data);
+      }
+      confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+      showToast('MEB Gezi Sonuç Değerlendirme Raporu başarıyla kaydedildi ve okul idaresine iletildi.', 'success');
+    } else {
+      showToast('Değerlendirme kaydedilirken bir hata oluştu.', 'error');
+    }
   };
 
   // Load selected plan into form
@@ -458,6 +475,7 @@ export function App() {
         currentUser={currentUser}
         onLoadPlan={handleLoadPlan}
         onPrintPlan={handlePrintPlan}
+        onOpenEvaluation={(plan) => setEvaluatingPlan(plan)}
         onDeletePlan={handleDeletePlan}
         onExportJSON={handleExportJSON}
         onImportJSON={handleImportJSON}
@@ -478,6 +496,18 @@ export function App() {
         plans={savedPlans}
         onSyncComplete={refreshPlans}
       />
+
+      {/* Gezi Sonrası Değerlendirme Modalı (Öğretmen & İdare) */}
+      {evaluatingPlan && (
+        <PostTripEvaluationModal
+          isOpen={!!evaluatingPlan}
+          onClose={() => setEvaluatingPlan(null)}
+          plan={evaluatingPlan}
+          currentUser={currentUser}
+          onSaveEvaluation={handleSaveEvaluation}
+          readOnly={false}
+        />
+      )}
 
     </div>
   );

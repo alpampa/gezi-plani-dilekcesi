@@ -14,7 +14,9 @@ import {
   XCircle,
   AlertTriangle,
   Printer,
-  FileDown
+  FileDown,
+  Star,
+  FileCheck2
 } from 'lucide-react';
 import type { GeziPlanData, AuthUser } from '../types';
 import { checkTripDeadlineRule } from '../services/db';
@@ -27,6 +29,7 @@ interface SavedPlansModalProps {
   currentUser?: AuthUser | null;
   onLoadPlan: (plan: GeziPlanData) => void;
   onPrintPlan?: (plan: GeziPlanData) => void;
+  onOpenEvaluation?: (plan: GeziPlanData) => void;
   onDeletePlan: (id: string) => void;
   onExportJSON: () => void;
   onImportJSON: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -39,6 +42,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
   currentUser,
   onLoadPlan,
   onPrintPlan,
+  onOpenEvaluation,
   onDeletePlan,
   onExportJSON,
   onImportJSON
@@ -240,19 +244,50 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
                       )}
 
                       {/* Deadline Warning / Countdown Badge */}
-                      <div className="pt-0.5">
+                      <div className="pt-0.5 flex flex-wrap items-center gap-2">
                         <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded ${
                           deadlineCheck.isEditable ? 'bg-blue-50 text-blue-700' : 'bg-amber-100 text-amber-900 font-bold'
                         }`}>
                           <AlertTriangle className="w-3 h-3" />
                           <span>{deadlineCheck.message}</span>
                         </span>
+
+                        {/* Gezi Sonrası Değerlendirme Durum Rozeti */}
+                        {plan.postTripEvaluation ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs">
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-400" />
+                            <span>Değerlendirildi ({plan.postTripEvaluation.overallRating}/5)</span>
+                          </span>
+                        ) : isApproved ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                            <span>Değerlendirme Bekliyor</span>
+                          </span>
+                        ) : null}
                       </div>
 
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
                       
+                      {/* Gezi Sonrası Değerlendirme Butonu */}
+                      {onOpenEvaluation && (isApproved || plan.postTripEvaluation) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onOpenEvaluation(plan);
+                          }}
+                          className={`px-3 py-1.5 text-xs font-extrabold rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer ${
+                            plan.postTripEvaluation
+                              ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300'
+                              : 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-emerald-600/20'
+                          }`}
+                          title="MEB Sosyal Etkinlikler Yönetmeliği Gezi Sonuç Değerlendirme Formunu Doldur / Görüntüle"
+                        >
+                          <FileCheck2 className="w-3.5 h-3.5" />
+                          <span>{plan.postTripEvaluation ? 'Değerlendirmeyi Gör/Düzenle' : 'Geziyi Değerlendir'}</span>
+                        </button>
+                      )}
+
                       {/* PDF İndir Butonu */}
                       <button
                         type="button"
