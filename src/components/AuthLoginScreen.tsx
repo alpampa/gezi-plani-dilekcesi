@@ -12,7 +12,8 @@ import {
   ArrowRight, 
   ShieldCheck, 
   Check,
-  Briefcase
+  Briefcase,
+  AlertTriangle
 } from 'lucide-react';
 
 interface AuthLoginScreenProps {
@@ -173,8 +174,44 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
           </p>
         </div>
 
+        {/* MEB & BELEDİYE RESMİ BİLDİRİM SÜRESİ UYARI BANDI */}
+        <div className="mx-6 sm:mx-8 mt-5 p-4 rounded-2xl bg-amber-50 border border-amber-300 shadow-xs flex items-start gap-3 text-amber-950">
+          <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+            <AlertTriangle className="w-5 h-5 text-amber-700" />
+          </div>
+          <div className="text-xs space-y-1.5 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-black text-amber-950 text-[11px] sm:text-xs uppercase tracking-wide">
+                MEB Gezi Yönergesi Bildirim Zorunluluğu
+              </span>
+              <span className="px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-900 font-extrabold text-[9px] uppercase">
+                Yasal Süre
+              </span>
+            </div>
+
+            <div className="space-y-1 text-[11px] font-semibold text-amber-900">
+              <div className="flex items-start gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0 mt-1.5"></span>
+                <span>
+                  <strong className="text-amber-950 font-bold">Araç Talepli Geziler (Belediye / Toplu Taşıma):</strong> En az <span className="underline font-black text-amber-950 bg-amber-100 px-1 py-0.2 rounded">15 GÜN ÖNCEDEN</span> okul idaresine bildirilmesi ve evrak teslimi zorunludur.
+                </span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0 mt-1.5"></span>
+                <span>
+                  <strong className="text-amber-950 font-bold">Araç Talebi Olmayan / Diğer Geziler:</strong> En az <span className="underline font-black text-amber-950 bg-amber-100 px-1 py-0.2 rounded">7 GÜN ÖNCEDEN</span> okul idaresine bildirilmesi zorunludur.
+                </span>
+              </div>
+            </div>
+
+            <span className="text-[10px] text-amber-700 block font-medium pt-0.5">
+              * Belirtilen yasal sürelere kadar sistemde güncelleme yapılabilir; süre bitiminde plan kilitlenerek yalnızca resmi çıktı alınabilir.
+            </span>
+          </div>
+        </div>
+
         {/* Giriş Formu */}
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 pt-4 space-y-5">
           
           {/* 1. ANA GİRİŞ SEÇENEĞİ (2 SEÇENEKLİ: ÖĞRETMEN / OKUL İDARESİ) */}
           <div>
