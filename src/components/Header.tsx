@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {currentUser.fullName}
                   </span>
                   <span className="text-[10px] text-slate-500 block truncate max-w-[140px]">
-                    {currentUser.email}
+                    {currentUser.role === 'ogretmen' ? currentUser.email : (currentUser.title || 'Okul İdaresi')}
                   </span>
                 </div>
 
@@ -222,7 +222,9 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-1.5 text-xs truncate">
               <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <span className="font-bold text-slate-900 truncate">{currentUser.fullName}</span>
-              <span className="text-[10px] text-slate-500">({currentUser.email})</span>
+              <span className="text-[10px] text-slate-500">
+                ({currentUser.role === 'ogretmen' ? currentUser.email : (currentUser.title || 'Okul İdaresi')})
+              </span>
             </div>
           )}
 

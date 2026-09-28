@@ -51,7 +51,7 @@ export function App() {
     updatedAt: new Date().toISOString()
   });
 
-  const [userRole, setUserRole] = useState<UserRole>(currentUser?.role || 'ogretmen');
+  const [userRole, setUserRole] = useState<UserRole>(currentUser?.role === 'ogretmen' ? 'ogretmen' : 'okul_idaresi');
   const [currentPlan, setCurrentPlan] = useState<GeziPlanData>(createNewPlanObject(currentUser));
   const [savedPlans, setSavedPlans] = useState<GeziPlanData[]>([]);
   
@@ -83,7 +83,8 @@ export function App() {
   const handleLogin = (user: AuthUser) => {
     setCurrentUser(user);
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    setUserRole(user.role);
+    const activeRole: UserRole = user.role === 'ogretmen' ? 'ogretmen' : 'okul_idaresi';
+    setUserRole(activeRole);
     setCurrentPlan(createNewPlanObject(user));
     showToast(`Hoş geldiniz, ${user.fullName} (${user.title || ''})`, 'success');
   };
@@ -418,6 +419,7 @@ export function App() {
           <div className="no-print">
             <AdminApprovalPanel
               plans={savedPlans}
+              currentUser={currentUser}
               onAdvanceStage={handleAdvanceStage}
               onReject={handleRejectPlan}
               onSelectPlan={handleLoadPlan}
