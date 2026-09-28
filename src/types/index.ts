@@ -1,5 +1,12 @@
-export type UserRole = 'ogretmen' | 'okul_idaresi';
-export type PlanStatus = 'taslak' | 'onay_bekliyor' | 'onaylandi' | 'reddedildi';
+export type UserRole = 'ogretmen' | 'memur' | 'mudur_yardimcisi' | 'okul_muduru' | 'okul_idaresi';
+
+export type PlanStatus = 
+  | 'taslak' 
+  | 'memur_incelemesinde' 
+  | 'mudur_yardimcisi_onayinda' 
+  | 'mudur_onayinda' 
+  | 'onaylandi' 
+  | 'reddedildi';
 
 export interface GradeStudentRow {
   id: string;
@@ -38,9 +45,28 @@ export interface GeziPlanData {
   createdAt: string;
   updatedAt: string;
   
-  // Durum ve Onay Bilgileri
+  // Durum ve Kademeli Onay Bilgileri
   status: PlanStatus;
   submittedBy?: string; // Öğretmen adı
+  teacherEmail?: string; // Öğretmenin e-postası
+  schoolEmail?: string; // Okul e-postası (Varsayılan: zeynepkamililkokulu@gmail.com)
+  
+  // Memur İnceleme Bilgileri
+  clerkReviewedAt?: string;
+  clerkReviewedBy?: string;
+  clerkNotes?: string;
+  
+  // Müdür Yardımcısı Onay Bilgileri (Fudan FİDAN)
+  deputyApprovedAt?: string;
+  deputyApprovedBy?: string;
+  deputyNotes?: string;
+  
+  // Okul Müdürü Nihai Olur Bilgileri (Recep KIZILIRMAK)
+  principalApprovedAt?: string;
+  principalApprovedBy?: string;
+  principalNotes?: string;
+  
+  // Genel Not / Ret Nedeni
   approvalNotes?: string;
   approvedAt?: string;
   approvedBy?: string;
@@ -54,6 +80,7 @@ export interface GeziPlanData {
   documentNumber: string; // Sayı / Evrak Kayıt No (Varsayılan boş)
   principalName: string; // Varsayılan: Recep KIZILIRMAK
   deputyPrincipalName: string; // Varsayılan: Fudan FİDAN
+  clerkName?: string; // Memur Adı
   
   // 2. Gezi Mekan & Türü
   destinationCategory: string;

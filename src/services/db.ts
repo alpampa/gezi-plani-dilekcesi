@@ -3,6 +3,8 @@ import type { GeziPlanData, PlanStatus } from '../types';
 const STORAGE_KEY = 'odos_gezi_plani_saved_records_v1';
 const GITHUB_CONFIG_KEY = 'odos_gezi_github_sync_config_v1';
 
+export const DEFAULT_SCHOOL_EMAIL = 'zeynepkamililkokulu@gmail.com';
+
 export interface GitHubSyncConfig {
   enabled: boolean;
   token?: string;
@@ -56,7 +58,69 @@ export function checkFiveDaysRule(tripDateStr: string): {
 }
 
 /**
- * Veritabanı Yöneticisi (LocalStorage + GitHub Database Sync)
+ * E-posta Gönderim Şablonu Oluşturucu & Mailto Tetikleyici
+ */
+export function sendPlanNotificationEmails(
+  plan: GeziPlanData,
+  teacherEmail: string,
+  schoolEmail: string = DEFAULT_SCHOOL_EMAIL
+): { success: boolean; mailtoUrl: string } {
+  const subject = encodeURIComponent(
+    `[MEB Gezi İzni Talebi] ${plan.schoolName} - ${plan.destinationName} (${plan.targetGrades})`
+  );
+
+  const bodyContent = `Sayın İdare ve Görevli Öğretmen,
+
+Okul Dışı Öğrenme / Sosyal Etkinlik Gezi Planı sisteme başarıyla kaydedilmiş ve okul idaresi onay sürecine (Memur Ön İnceleme -> Müdür Yardımcısı -> Okul Müdürü) sunulmuştur.
+
+ÖZET GEZİ VE DİLEKÇE BİLGİLERİ:
+--------------------------------------------------
+• Okul / Kurum: ${plan.schoolName} (${plan.district} / ${plan.city})
+• Gidilecek Yer / Mekân: ${plan.destinationName}
+• Kategori & Tür: ${plan.destinationCategory} (${plan.tripType} - ${plan.tripDuration})
+• Gezi Tarihi & Saat: ${plan.tripDate} (${plan.departureTime} - ${plan.returnTime})
+• Katılacak Şubeler: ${plan.targetGrades}
+• Toplam Öğrenci Sayısı: ${plan.totalStudentCount} (Erkek: ${plan.maleStudentCount}, Kız: ${plan.femaleStudentCount})
+• Kafile Başkanı: ${plan.headTeacher?.fullName} (${plan.headTeacher?.branch || ''}) - Tel: ${plan.headTeacher?.phone}
+• Görevli Öğretmen Sayısı: ${1 + (plan.teachers?.length || 0)}
+• Refakatçi Veli Sayısı: ${plan.companions?.length || 0}
+• Ulaşım Şekli: ${plan.transportationType} ${plan.transportationType !== 'Yürüyerek' ? `(Plaka: ${plan.vehiclePlate || '-'})` : '(Araçsız Yürüyerek İntikal)'}
+• Seyahat Güzergâhı: ${plan.travelRoute || '-'}
+
+ONAY AŞAMALARI:
+1. Aşama: Memur Ön İnceleme & Evrak Kayıt
+2. Aşama: Sosyal Etkinlikler Kurulu Bşk. (Müdür Yrd. Fudan FİDAN) İnceleme & Paraf
+3. Aşama: Okul Müdürü (Recep KIZILIRMAK) Nihai Makam Oluru
+
+İlgili gezi planı ve A4 resmi dilekçe çıktısı sistem üzerinden takip edilebilir.
+
+Bildirim E-postaları:
+Öğretmen: ${teacherEmail || 'Belirtilmedi'}
+Okul İdaresi: ${schoolEmail}
+
+Bilgilerinize arz/rica olunur.
+${plan.schoolName} Gezi ve İnceleme Kulübü`;
+
+  const body = encodeURIComponent(bodyContent);
+  const toEmails = [schoolEmail, teacherEmail].filter(Boolean).join(',');
+  const mailtoUrl = `mailto:${toEmails}?subject=${subject}&body=${body}`;
+
+  try {
+    const link = document.createElement('a');
+    link.href = mailtoUrl;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (e) {
+    console.warn('Mailto açılamadı:', e);
+  }
+
+  return { success: true, mailtoUrl };
+}
+
+/**
+ * Veritabanı Yöneticisi (LocalStorage + GitHub Database Sync + Kademeli Onay)
  */
 export const DatabaseService = {
   // Kayıtlı planları getir
@@ -124,36 +188,81 @@ export const DatabaseService = {
     }
   },
 
-  // Plan onay durumunu güncelle (Okul İdaresi için)
-  updateStatus(
-    id: string,
-    status: PlanStatus,
-    adminName: string = 'Recep KIZILIRMAK',
+  /**
+   * Kademeli Onay Akışı İlerletme:
+   * 1. Memur İncelemesi -> Müdür Yardımcısı Onayı (Fudan FİDAN)
+   * 2. Müdür Yardımcısı Onayı -> Okul Müdürü Onayı (Recep KIZILIRMAK)
+   * 3. Okul Müdürü Onayı -> Onaylandı (Makam Oluru Verildi)
+   */
+  advanceStage(
+    planId: string,
+    currentRole: 'memur' | 'mudur_yardimcisi' | 'okul_muduru',
+    reviewerName: string,
     notes?: string
-  ): { success: boolean; data?: GeziPlanData } {
+  ): { success: boolean; data?: GeziPlanData; nextStageName: string } {
     const plans = this.getPlans();
-    const targetIdx = plans.findIndex(p => p.id === id);
-    if (targetIdx === -1) return { success: false };
+    const idx = plans.findIndex(p => p.id === planId);
+    if (idx === -1) return { success: false, nextStageName: '' };
 
-    const updatedPlan: GeziPlanData = {
-      ...plans[targetIdx],
-      status,
-      updatedAt: new Date().toISOString(),
-      ...(status === 'onaylandi' ? {
-        approvedAt: new Date().toISOString(),
-        approvedBy: adminName,
-        approvalNotes: notes || 'Okul İdaresi tarafından uygun görülmüş ve onaylanmıştır.'
-      } : {}),
-      ...(status === 'reddedildi' ? {
-        approvalNotes: notes || 'Düzeltme talep edilmiştir.'
-      } : {})
-    };
+    const target = { ...plans[idx] };
+    const now = new Date().toISOString();
+    let nextStageName = '';
 
-    plans[targetIdx] = updatedPlan;
+    if (currentRole === 'memur') {
+      target.status = 'mudur_yardimcisi_onayinda';
+      target.clerkReviewedAt = now;
+      target.clerkReviewedBy = reviewerName || 'Memur / Evrak Kayıt';
+      target.clerkNotes = notes || 'Ön inceleme ve evrak kontrolleri yapılmıştır.';
+      target.updatedAt = now;
+      nextStageName = 'Müdür Yardımcısı (Fudan FİDAN) Onayı';
+    } else if (currentRole === 'mudur_yardimcisi') {
+      target.status = 'mudur_onayinda';
+      target.deputyApprovedAt = now;
+      target.deputyApprovedBy = reviewerName || 'Fudan FİDAN (Müdür Yrd.)';
+      target.deputyNotes = notes || 'Sosyal Etkinlikler Kurulu incelemesi tamamlanmış ve uygun görülmüştür.';
+      target.updatedAt = now;
+      nextStageName = 'Okul Müdürü (Recep KIZILIRMAK) Makam Oluru';
+    } else if (currentRole === 'okul_muduru') {
+      target.status = 'onaylandi';
+      target.principalApprovedAt = now;
+      target.principalApprovedBy = reviewerName || 'Recep KIZILIRMAK (Okul Müdürü)';
+      target.principalNotes = notes || 'Makam oluru verilmiş, gezi uygun görülmüştür.';
+      target.approvedAt = now;
+      target.approvedBy = reviewerName || 'Recep KIZILIRMAK (Okul Müdürü)';
+      target.approvalNotes = 'Okul Müdürü tarafından onaylanmıştır.';
+      target.updatedAt = now;
+      nextStageName = 'Kesin Onaylandı / Makam Oluru Verildi';
+    }
+
+    plans[idx] = target;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
     this.syncWithGitHub(plans).catch(err => console.warn('GitHub Sync uyarısı:', err));
 
-    return { success: true, data: updatedPlan };
+    return { success: true, data: target, nextStageName };
+  },
+
+  // Planı Reddet / Düzeltme İste
+  rejectPlan(
+    planId: string,
+    rejectedBy: string,
+    notes: string
+  ): { success: boolean; data?: GeziPlanData } {
+    const plans = this.getPlans();
+    const idx = plans.findIndex(p => p.id === planId);
+    if (idx === -1) return { success: false };
+
+    const target = {
+      ...plans[idx],
+      status: 'reddedildi' as PlanStatus,
+      approvalNotes: `${rejectedBy}: ${notes}`,
+      updatedAt: new Date().toISOString()
+    };
+
+    plans[idx] = target;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+    this.syncWithGitHub(plans).catch(err => console.warn('GitHub Sync uyarısı:', err));
+
+    return { success: true, data: target };
   },
 
   // GitHub Sync Yapılandırmasını getir
@@ -191,7 +300,6 @@ export const DatabaseService = {
       };
 
       if (config.gistId) {
-        // Mevcut Gist güncelle
         const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
           method: 'PATCH',
           headers: {
@@ -208,7 +316,6 @@ export const DatabaseService = {
           return true;
         }
       } else {
-        // Yeni Gist oluştur
         const res = await fetch('https://api.github.com/gists', {
           method: 'POST',
           headers: {
@@ -268,5 +375,111 @@ export const DatabaseService = {
     } catch (e: any) {
       return { success: false, count: 0, error: e?.message || 'Bağlantı hatası' };
     }
+  },
+
+  // Takip & Raporlama için İstatistik ve Veri Analizi
+  getAnalyticsData(plans: GeziPlanData[]) {
+    const totalPlans = plans.length;
+    const pendingClerk = plans.filter(p => p.status === 'memur_incelemesinde').length;
+    const pendingDeputy = plans.filter(p => p.status === 'mudur_yardimcisi_onayinda').length;
+    const pendingPrincipal = plans.filter(p => p.status === 'mudur_onayinda').length;
+    const approvedPlans = plans.filter(p => p.status === 'onaylandi').length;
+    const rejectedPlans = plans.filter(p => p.status === 'reddedildi').length;
+
+    const totalStudents = plans.reduce((acc, p) => acc + (Number(p.totalStudentCount) || 0), 0);
+    const totalMale = plans.reduce((acc, p) => acc + (Number(p.maleStudentCount) || 0), 0);
+    const totalFemale = plans.reduce((acc, p) => acc + (Number(p.femaleStudentCount) || 0), 0);
+    const totalTeachers = plans.reduce((acc, p) => acc + 1 + (p.teachers?.length || 0), 0);
+    const totalCompanions = plans.reduce((acc, p) => acc + (p.companions?.length || 0), 0);
+
+    // Kategori Dağılımı
+    const categoriesMap: Record<string, number> = {};
+    plans.forEach(p => {
+      const cat = p.destinationCategory || 'Diğer';
+      categoriesMap[cat] = (categoriesMap[cat] || 0) + 1;
+    });
+
+    // İlçe Dağılımı
+    const districtsMap: Record<string, number> = {};
+    plans.forEach(p => {
+      const d = p.selectedDistrict || 'Belirtilmedi';
+      districtsMap[d] = (districtsMap[d] || 0) + 1;
+    });
+
+    return {
+      totalPlans,
+      pendingClerk,
+      pendingDeputy,
+      pendingPrincipal,
+      totalPending: pendingClerk + pendingDeputy + pendingPrincipal,
+      approvedPlans,
+      rejectedPlans,
+      totalStudents,
+      totalMale,
+      totalFemale,
+      totalTeachers,
+      totalCompanions,
+      categoriesMap,
+      districtsMap
+    };
+  },
+
+  // CSV Raporu İndir
+  downloadCSVReport(plans: GeziPlanData[]) {
+    const headers = [
+      'ID',
+      'Durum',
+      'Okul',
+      'Gezi Yeri',
+      'Kategori',
+      'İlçe/İl',
+      'Gezi Tarihi',
+      'Saat',
+      'Şubeler',
+      'Erkek Öğrenci',
+      'Kız Öğrenci',
+      'Toplam Öğrenci',
+      'Kafile Başkanı',
+      'Kafile Tel',
+      'Ulaşım Türü',
+      'Araç Plaka',
+      'Oluşturulma Tarihi',
+      'Memur İnceleyen',
+      'Müdür Yrd Onaylayan',
+      'Müdür Onaylayan'
+    ];
+
+    const rows = plans.map(p => [
+      p.id,
+      p.status,
+      `"${p.schoolName || ''}"`,
+      `"${p.destinationName || ''}"`,
+      `"${p.destinationCategory || ''}"`,
+      `"${p.selectedDistrict || ''}/${p.selectedCity || ''}"`,
+      p.tripDate || '',
+      `"${p.departureTime || ''}-${p.returnTime || ''}"`,
+      `"${p.targetGrades || ''}"`,
+      p.maleStudentCount || 0,
+      p.femaleStudentCount || 0,
+      p.totalStudentCount || 0,
+      `"${p.headTeacher?.fullName || p.submittedBy || ''}"`,
+      `"${p.headTeacher?.phone || ''}"`,
+      `"${p.transportationType || ''}"`,
+      `"${p.vehiclePlate || ''}"`,
+      p.createdAt?.split('T')[0] || '',
+      `"${p.clerkReviewedBy || ''}"`,
+      `"${p.deputyApprovedBy || ''}"`,
+      `"${p.principalApprovedBy || ''}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `MEB_Gezi_Planlari_Raporu_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 };

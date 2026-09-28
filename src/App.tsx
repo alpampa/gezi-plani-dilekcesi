@@ -9,7 +9,7 @@ import { AdminApprovalPanel } from './components/AdminApprovalPanel';
 import { GitHubSyncModal } from './components/GitHubSyncModal';
 import type { GeziPlanData, UserRole } from './types';
 import { INITIAL_EMPTY_PLAN, SAMPLE_POPULATED_PLAN } from './data/locations';
-import { DatabaseService } from './services/db';
+import { DatabaseService, sendPlanNotificationEmails, DEFAULT_SCHOOL_EMAIL } from './services/db';
 import { Eye, EyeOff, CheckCircle2, AlertCircle, Sparkles, GraduationCap, Building2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -21,6 +21,7 @@ export function App() {
     documentNumber: '',
     principalName: 'Recep KIZILIRMAK',
     deputyPrincipalName: 'Fudan FİDAN',
+    schoolEmail: DEFAULT_SCHOOL_EMAIL,
     status: 'taslak',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -51,7 +52,7 @@ export function App() {
     setToastMessage({ text, type });
     setTimeout(() => {
       setToastMessage(null);
-    }, 4000);
+    }, 4500);
   };
 
   // Form field update
@@ -80,6 +81,7 @@ export function App() {
       documentNumber: '',
       principalName: 'Recep KIZILIRMAK',
       deputyPrincipalName: 'Fudan FİDAN',
+      schoolEmail: DEFAULT_SCHOOL_EMAIL,
       status: 'taslak',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -102,7 +104,7 @@ export function App() {
       try {
         confetti({ particleCount: 30, spread: 40 });
       } catch (_) {}
-      showToast('Gezi planı taslak olarak veritabanına kaydedildi.', 'success');
+      showToast('Gezi planı taslak olarak kaydedildi.', 'success');
     } else {
       showToast('Kaydetme sırasında bir hata oluştu.', 'error');
     }
@@ -117,12 +119,19 @@ export function App() {
     setIsApprovalModalOpen(true);
   };
 
-  // Confirm submission: Save with status 'onay_bekliyor' and RESET to clean new blank form!
-  const handleConfirmSubmit = (teacherName: string, teacherNotes?: string) => {
+  // Confirm submission: Save with status 'memur_incelemesinde', send emails, and RESET to clean blank form!
+  const handleConfirmSubmit = (
+    teacherName: string, 
+    teacherEmail: string, 
+    schoolEmail: string, 
+    teacherNotes?: string
+  ) => {
     const planToSubmit: GeziPlanData = {
       ...currentPlan,
-      status: 'onay_bekliyor',
+      status: 'memur_incelemesinde', // 1. Aşama Memur Ön İncelemesine gider
       submittedBy: teacherName,
+      teacherEmail: teacherEmail,
+      schoolEmail: schoolEmail || DEFAULT_SCHOOL_EMAIL,
       approvalNotes: teacherNotes ? `Öğretmen Notu: ${teacherNotes}` : undefined,
       headTeacher: {
         ...currentPlan.headTeacher,
@@ -136,11 +145,15 @@ export function App() {
 
     if (res.success) {
       refreshPlans();
+
+      // E-posta bildirimini tetikle
+      sendPlanNotificationEmails(planToSubmit, teacherEmail, schoolEmail || DEFAULT_SCHOOL_EMAIL);
+
       try {
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.3 } });
       } catch (_) {}
       
-      showToast(`"${planToSubmit.destinationName}" planı Okul İdaresi (Recep KIZILIRMAK / Fudan FİDAN) onayına sunuldu.`, 'success');
+      showToast(`"${planToSubmit.destinationName}" planı Memur Ön İncelemesine sunuldu ve ${schoolEmail || DEFAULT_SCHOOL_EMAIL} adresine e-posta bildirimi hazırlandı.`, 'success');
       
       // Kullanıcının istediği gibi EKRAN YENİ BOŞ KAYIT EKRANINA DÖNSÜN:
       setCurrentPlan(createNewPlanObject());
@@ -149,21 +162,26 @@ export function App() {
     }
   };
 
-  // Admin: Approve Plan
-  const handleApprovePlan = (planId: string, adminName: string, notes?: string) => {
-    const res = DatabaseService.updateStatus(planId, 'onaylandi', adminName, notes);
+  // Admin: Kademeli Onay Aşaması İlerletme (Memur -> Md Yrd -> Mudur)
+  const handleAdvanceStage = (
+    planId: string, 
+    currentRole: 'memur' | 'mudur_yardimcisi' | 'okul_muduru', 
+    reviewerName: string, 
+    notes?: string
+  ) => {
+    const res = DatabaseService.advanceStage(planId, currentRole, reviewerName, notes);
     if (res.success) {
       refreshPlans();
       try {
         confetti({ particleCount: 60, spread: 60 });
       } catch (_) {}
-      showToast(`Gezi planı ${adminName} tarafından onaylandı ve makam oluru verildi.`, 'success');
+      showToast(`İşlem Başarılı: Plan "${res.nextStageName}" aşamasına aktarıldı.`, 'success');
     }
   };
 
   // Admin: Reject / Request revision
-  const handleRejectPlan = (planId: string, notes: string) => {
-    const res = DatabaseService.updateStatus(planId, 'reddedildi', 'Okul İdaresi', notes);
+  const handleRejectPlan = (planId: string, rejectedBy: string, notes: string) => {
+    const res = DatabaseService.rejectPlan(planId, rejectedBy, notes);
     if (res.success) {
       refreshPlans();
       showToast('Düzeltme talebi kaydedildi.', 'info');
@@ -232,7 +250,11 @@ export function App() {
     window.print();
   };
 
-  const pendingCount = savedPlans.filter(p => p.status === 'onay_bekliyor').length;
+  const pendingCount = savedPlans.filter(p => 
+    p.status === 'memur_incelemesinde' || 
+    p.status === 'mudur_yardimcisi_onayinda' || 
+    p.status === 'mudur_onayinda'
+  ).length;
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col selection:bg-red-500 selection:text-white font-sans antialiased">
@@ -290,10 +312,10 @@ export function App() {
               }`}
             >
               <Building2 className="w-4 h-4 text-indigo-400" />
-              <span>Okul İdaresi Onay Masası</span>
+              <span>Kademeli Onay, Takip & Rapor Masası</span>
               {pendingCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-500 text-white animate-pulse">
-                  {pendingCount} Bekleyen
+                  {pendingCount} Onay Bekleyen
                 </span>
               )}
             </button>
@@ -313,7 +335,7 @@ export function App() {
             ) : (
               <>
                 <Eye className="w-3.5 h-3.5" />
-                <span>Canlı A4 Baskı Önizlemesi</span>
+                <span>Canlı A4 Baskı Önizlemesi (2 Sayfa)</span>
               </>
             )}
           </button>
@@ -324,7 +346,7 @@ export function App() {
           <div className="no-print mb-8 p-4 sm:p-8 bg-slate-300/70 rounded-2xl border border-slate-300 shadow-inner flex justify-center">
             <div className="bg-white w-full max-w-[210mm] shadow-2xl border border-slate-300 rounded-sm overflow-hidden p-6 sm:p-10">
               <div className="text-[10px] text-slate-400 text-center uppercase tracking-widest border-b border-dashed pb-2 mb-4 font-mono">
-                --- A4 Resmi MEB Baskı Önizleme Alanı ---
+                --- A4 Resmi MEB Baskı Önizleme Alanı (Tam 2 Sayfa) ---
               </div>
               <PrintDocument data={currentPlan} />
             </div>
@@ -336,7 +358,7 @@ export function App() {
           <div className="no-print">
             <AdminApprovalPanel
               plans={savedPlans}
-              onApprove={handleApprovePlan}
+              onAdvanceStage={handleAdvanceStage}
               onReject={handleRejectPlan}
               onSelectPlan={handleLoadPlan}
               onPrintPlan={handlePrintPlan}

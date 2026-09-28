@@ -116,7 +116,9 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
             <div className="space-y-3">
               {savedPlans.map((plan) => {
                 const fiveDays = checkFiveDaysRule(plan.tripDate);
-                const isPending = plan.status === 'onay_bekliyor';
+                const isPendingClerk = plan.status === 'memur_incelemesinde';
+                const isPendingDeputy = plan.status === 'mudur_yardimcisi_onayinda';
+                const isPendingPrincipal = plan.status === 'mudur_onayinda';
                 const isApproved = plan.status === 'onaylandi';
                 const isRejected = plan.status === 'reddedildi';
 
@@ -132,11 +134,23 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
                           {plan.destinationName || 'İsimsiz Gezi Planı'}
                         </h4>
 
-                        {/* Status Badge */}
-                        {isPending && (
+                        {/* Status Badges */}
+                        {isPendingClerk && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            <span>İdare Onayı Bekliyor</span>
+                            <span>1. Aşama: Memurda</span>
+                          </span>
+                        )}
+                        {isPendingDeputy && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-800 border border-indigo-300 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>2. Aşama: Md. Yrd.'da (Fudan FİDAN)</span>
+                          </span>
+                        )}
+                        {isPendingPrincipal && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>3. Aşama: Müdürde (Recep KIZILIRMAK)</span>
                           </span>
                         )}
                         {isApproved && (

@@ -8,20 +8,22 @@
   }
 }
 
-/* Print Specific CSS */
+/* Print Specific CSS - Strictly 2 A4 Pages */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm 12mm 10mm 12mm;
+    margin: 8mm 10mm 8mm 10mm;
   }
 
-  body {
+  html, body {
     background-color: #ffffff !important;
     color: #000000 !important;
-    font-size: 9.5pt;
-    line-height: 1.25;
+    font-size: 8.5pt;
+    line-height: 1.2;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .no-print {
@@ -41,22 +43,39 @@
     border: none !important;
   }
 
-  .page-break-before {
-    page-break-before: always;
+  .print-page-1 {
+    page-break-after: always !important;
+    break-after: page !important;
+    min-height: 98vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .print-page-2 {
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    min-height: 98vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .page-break-inside-avoid {
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   table {
-    page-break-inside: auto;
+    page-break-inside: avoid;
   }
 
   tr {
     page-break-inside: avoid;
-    page-break-after: auto;
   }
 }
 
