@@ -91,36 +91,47 @@ export function sendPlanNotificationEmails(
   teacherEmail: string,
   schoolEmail: string = DEFAULT_SCHOOL_EMAIL
 ): { success: boolean; mailtoUrl: string } {
+  const isMunicipality = plan.transportationType === 'Belediye / Toplu Taşıma';
+  const deadlineDays = isMunicipality ? 15 : 7;
+
   const subject = encodeURIComponent(
     `[MEB Gezi İzni Talebi] ${plan.schoolName} - ${plan.destinationName} (${plan.targetGrades})`
   );
 
-  const bodyContent = `Sayın İdare ve Görevli Öğretmen,
+  const bodyContent = `Sayın Okul İdaresi ve Değerli Öğretmenimiz,
 
-Okul Dışı Öğrenme / Sosyal Etkinlik Gezi Planı sisteme başarıyla kaydedilmiş ve okul idaresi onay sürecine (Memur Ön İnceleme -> Müdür Yardımcısı -> Okul Müdürü) sunulmuştur.
+Okulumuz ${plan.schoolName} bünyesinde düzenlenmesi planlanan okul dışı öğrenme gezi planı ve izin dilekçesi sisteme başarıyla kaydedilmiş ve okul idaresi onay sürecine (Memur Ön İnceleme -> Müdür Yardımcısı Uygun Görüş -> Okul Müdürü Makam Oluru) sunulmuştur.
 
-ÖZET GEZİ VE DİLEKÇE BİLGİLERİ:
+RESMİ GEZİ RAPORU VE TALEP DETAYLARI:
 --------------------------------------------------
 • Okul / Kurum: ${plan.schoolName} (${plan.district} / ${plan.city})
 • Gidilecek Yer / Mekân: ${plan.destinationName}
 • Kategori & Tür: ${plan.destinationCategory} (${plan.tripType} - ${plan.tripDuration})
+• İl / İlçe: ${plan.selectedCity} / ${plan.selectedDistrict}
 • Gezi Tarihi & Saat: ${plan.tripDate} (${plan.departureTime} - ${plan.returnTime})
 • Katılacak Şubeler: ${plan.targetGrades}
-• Toplam Öğrenci Sayısı: ${plan.totalStudentCount} (Erkek: ${plan.maleStudentCount}, Kız: ${plan.femaleStudentCount})
-• Kafile Başkanı: ${plan.headTeacher?.fullName} (${plan.headTeacher?.branch || ''}) - Tel: ${plan.headTeacher?.phone}
+• Öğrenci Sayıları: Toplam ${plan.totalStudentCount} Öğrenci (Erkek: ${plan.maleStudentCount}, Kız: ${plan.femaleStudentCount})
+• Kafile Başkanı: ${plan.headTeacher?.fullName} (${plan.headTeacher?.branch || 'Öğretmen'}) - Tel: ${plan.headTeacher?.phone}
 • Görevli Öğretmen Sayısı: ${1 + (plan.teachers?.length || 0)}
 • Refakatçi Veli Sayısı: ${plan.companions?.length || 0}
-• Ulaşım Şekli: ${plan.transportationType} ${plan.transportationType !== 'Yürüyerek' ? `(Plaka: ${plan.vehiclePlate || '-'})` : '(Araçsız Yürüyerek İntikal)'}
+• Ulaşım Türü: ${plan.transportationType} ${plan.transportationType !== 'Yürüyerek' ? `(Plaka: ${plan.vehiclePlate || 'Belirtilmedi'})` : '(Araçsız Yürüyerek İntikal)'}
 • Seyahat Güzergâhı: ${plan.travelRoute || '-'}
+• İlgili Ders & Maarif Modeli: ${plan.courseName || '-'} / ${plan.subjectTopic || '-'}
 
-ONAY AŞAMALARI:
-1. Aşama: Memur Ön İnceleme & Evrak Kayıt
-2. Aşama: Sosyal Etkinlikler Kurulu Bşk. (Müdür Yrd. Fudan FİDAN) İnceleme & Paraf
+ONAY AŞAMALARI (3 SİSTEMLİ AKIŞ):
+1. Aşama: Evrak Kayıt Memuru Ön İncelemesi
+2. Aşama: Sosyal Etkinlikler Kurulu Bşk. (Müdür Yrd. Fudan FİDAN) Uygun Görüşü
 3. Aşama: Okul Müdürü (Recep KIZILIRMAK) Nihai Makam Oluru
 
-İlgili gezi planı ve A4 resmi dilekçe çıktısı sistem üzerinden takip edilebilir.
+⚠️ YASAL BİLDİRİM VE EVRAK TESLİM UYARISI:
+${isMunicipality 
+  ? `* BELEDİYE ARAÇ TALEBİ: Belediyeden araç talep edilen gezilerde MEB ve Belediye kuralları gereği gezi tarihinden EN AZ ${deadlineDays} GÜN ÖNCE onaylı 2 sayfalık resmi çıktının ıslak imzalı olarak evrak kayıt memuruna teslim edilmesi zorunludur.`
+  : `* MEB GEZİ YÖNERGESİ: Gezi tarihinden EN AZ ${deadlineDays} GÜN ÖNCE onaylı 2 sayfalık resmi çıktının ıslak imzalı olarak evrak kayıt memuruna teslim edilmesi zorunludur.`
+}
 
-Bildirim E-postaları:
+Sistem üzerinden 2 sayfalık A4 resmi gezi planı ve dilekçe PDF raporunu görüntüleyebilir ve indirebilirsiniz.
+
+Bildirim İletişim Bilgileri:
 Öğretmen: ${teacherEmail || 'Belirtilmedi'}
 Okul İdaresi: ${schoolEmail}
 
@@ -146,7 +157,7 @@ ${plan.schoolName} Gezi ve İnceleme Kulübü`;
 }
 
 /**
- * Onay Durum Değişikliği E-posta Bildirimi
+ * Onay Durum Değişikliği E-posta Bildirimi & Resmi Gezi Raporu
  */
 export function sendApprovalStatusEmail(
   plan: GeziPlanData,
@@ -156,28 +167,40 @@ export function sendApprovalStatusEmail(
 ): void {
   const teacherEmail = plan.teacherEmail || '';
   const schoolEmail = plan.schoolEmail || DEFAULT_SCHOOL_EMAIL;
+  const isMunicipality = plan.transportationType === 'Belediye / Toplu Taşıma';
+  const deadlineDays = isMunicipality ? 15 : 7;
   
   const subject = encodeURIComponent(
-    `[${isFinalApproval ? 'MAKAM OLURU VERİLDİ - ONAYLANDI' : 'GEZİ PLANI ONAY AŞAMASI GÜNCELLENDİ'}] ${plan.destinationName} (${plan.targetGrades})`
+    `[${isFinalApproval ? 'MAKAM OLURU VERİLDİ - ONAYLANDI' : 'ONAY AŞAMASI GÜNCELLENDİ'}] ${plan.destinationName} (${plan.targetGrades})`
   );
 
-  const bodyContent = `Sayın Öğretmenimiz,
+  const bodyContent = `Sayın Öğretmenimiz ve Okul İdaremiz,
 
-Okulumuz ${plan.schoolName} bünyesinde düzenleyeceğiniz "${plan.destinationName}" okul dışı öğrenme gezi planınızın onay durumu güncellenmiştir.
+Okulumuz ${plan.schoolName} bünyesinde düzenlenecek olan "${plan.destinationName}" okul dışı öğrenme gezi planının onay süreci güncellenmiştir.
 
-GÜNCEL DURUM BİLGİSİ:
+ONAY VE SÜREÇ BİLGİLERİ:
 --------------------------------------------------
 • İşlem Yapan Yetkili: ${reviewerName}
-• Onay Aşaması: ${stageName}
+• Güncel Aşama: ${stageName}
 • Gezi Mekânı: ${plan.destinationName} (${plan.selectedDistrict} / ${plan.selectedCity})
-• Gezi Tarihi: ${plan.tripDate} (${plan.departureTime} - ${plan.returnTime})
+• Gezi Tarihi & Saat: ${plan.tripDate} (${plan.departureTime} - ${plan.returnTime})
 • Katılımcı: ${plan.totalStudentCount} Öğrenci (${plan.targetGrades})
+• Kafile Başkanı: ${plan.headTeacher?.fullName} (${plan.headTeacher?.phone})
+• Ulaşım: ${plan.transportationType} ${plan.transportationType !== 'Yürüyerek' ? `(Plaka: ${plan.vehiclePlate || 'Belirtilmedi'})` : '(Yürüyerek)'}
 
 ${isFinalApproval ? `
-TEBRİKLER! Gezi planınız Okul Müdürü Recep KIZILIRMAK tarafından incelenmiş, uygun görülmüş ve MAKAM OLURU VERİLMİŞTİR.
-Lütfen sistem üzerinden "Resmi Çıktı / PDF" butonuna basarak 2 sayfalık resmi A4 gezi planı ve dilekçenizi yazdırıp ıslak imza için okul idaresine teslim ediniz.
+========================================================================
+🎉 TEBRİKLER! GEZİ PLANI RESMİ OLARAK ONAYLANMIŞTIR (MAKAM OLURU VERİLDİ)
+========================================================================
+
+⚠️ DİKKAT VE ZORUNLU EVRAK TESLİM UYARISI:
+1. Lütfen Gezi Portalı üzerinden "🖨️ Resmi 2 Sayfa Çıktı / PDF İndir" butonuna basarak resmi gezi planı ve dilekçenizi alınız.
+2. Belgeleri ıslak imza ile imzalayarak, MEB ve Belediye mevzuatı gereğince (Gezi tarihinden EN AZ ${deadlineDays} GÜN ÖNCE) OKUL İDARESİNE / EVRAK KAYIT MEMURUNA SÜRESİ İÇİNDE TESLİM EDİNİZ.
+3. Resmi evrak teslimi ve kaydı tamamlanmadan gezi faaliyeti başlatılamaz.
+
+PDF Raporunu sistem üzerinden indirebilir veya bu e-posta çıktısını arşivleyebilirsiniz.
 ` : `
-Planınız bir sonraki onay aşamasına başarıyla iletilmiştir. Süreci sistem üzerinden takip edebilirsiniz.
+Planınız bir sonraki onay aşamasına başarıyla iletilmiştir. Süreci Gezi Portalı üzerinden canlı olarak takip edebilirsiniz.
 `}
 
 Bilgilerinize sunulur.
@@ -211,7 +234,7 @@ export function sendReturnStatusEmail(
   const schoolEmail = plan.schoolEmail || DEFAULT_SCHOOL_EMAIL;
 
   const subject = encodeURIComponent(
-    `[DÜZELTME / İADE TALEBİ] ${plan.destinationName} Gezi Planı İadesi`
+    `[DÜZELTME / İADE TALEBİ] ${plan.destinationName} Gezi Planı Revizyonu`
   );
 
   const bodyContent = `Sayın Öğretmenimiz,
@@ -224,8 +247,9 @@ Okulumuz ${plan.schoolName} bünyesinde hazırlamış olduğunuz "${plan.destina
 • İade / Düzeltme Notu: ${returnNote}
 • Gezi Mekânı: ${plan.destinationName}
 • Gezi Tarihi: ${plan.tripDate}
+• Katılımcı Şubeler: ${plan.targetGrades}
 
-Lütfen gezi portalına e-posta adresinizle giriş yaparak planınızı belirtilen hususlar doğrultusunda güncelleyip tekrar onaya gönderiniz.
+Lütfen Gezi Portalına e-posta adresinizle giriş yaparak planınızı belirtilen hususlar doğrultusunda güncelleyip tekrar onaya gönderiniz.
 
 Bilgilerinize sunulur.
 ${plan.schoolName} Müdürlüğü`;
@@ -343,6 +367,12 @@ export const DatabaseService = {
       target.updatedAt = now;
       nextStageName = 'Müdür Yardımcısı (Fudan FİDAN) Onayı';
     } else if (currentRole === 'mudur_yardimcisi') {
+      // Eğer memur henüz incelememişse dahi üst makam doğrudan ilerletebilir
+      if (!target.clerkReviewedAt) {
+        target.clerkReviewedAt = now;
+        target.clerkReviewedBy = 'Müdür Yrd. Tarafından Doğrudan İşleme Alındı';
+        target.clerkNotes = 'Müdür Yardımcısı tarafından ön inceleme beklemeden doğrudan işleme alınmıştır.';
+      }
       target.status = 'mudur_onayinda';
       target.deputyApprovedAt = now;
       target.deputyApprovedBy = reviewerName || 'Fudan FİDAN (Müdür Yrd.)';
@@ -350,6 +380,17 @@ export const DatabaseService = {
       target.updatedAt = now;
       nextStageName = 'Okul Müdürü (Recep KIZILIRMAK) Makam Oluru';
     } else if (currentRole === 'okul_muduru') {
+      // Eğer memur veya müdür yardımcısı henüz onaylamamışsa dahi Makam Oluru doğrudan verilebilir
+      if (!target.clerkReviewedAt) {
+        target.clerkReviewedAt = now;
+        target.clerkReviewedBy = 'Makam Oluru ile Doğrudan Onaylandı';
+        target.clerkNotes = 'Okul Müdürü tarafından doğrudan onaylanmıştır.';
+      }
+      if (!target.deputyApprovedAt) {
+        target.deputyApprovedAt = now;
+        target.deputyApprovedBy = 'Makam Oluru ile Doğrudan Onaylandı';
+        target.deputyNotes = 'Okul Müdürü Makam Oluru ile doğrudan uygun görülmüştür.';
+      }
       target.status = 'onaylandi';
       target.principalApprovedAt = now;
       target.principalApprovedBy = reviewerName || 'Recep KIZILIRMAK (Okul Müdürü)';

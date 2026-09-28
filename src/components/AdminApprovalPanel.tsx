@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { GeziPlanData, AuthUser } from '../types';
 import { checkTripDeadlineRule, DatabaseService } from '../services/db';
+import { generateAndDownloadPlanPDF } from '../services/pdf';
 import { 
   Building2, 
   CheckCircle2, 
@@ -26,7 +27,9 @@ import {
   BookOpen,
   MapPin,
   Send,
-  X
+  X,
+  FileDown,
+  AlertTriangle
 } from 'lucide-react';
 
 interface AdminApprovalPanelProps {
@@ -70,14 +73,8 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   // Görünüm Modu: 'list' (Onay & Takip Listesi) veya 'analytics' (Raporlama & Veri Masası)
   const [viewMode, setViewMode] = useState<'list' | 'analytics'>('list');
 
-  // Filtreler: Varsayılan olarak kullanıcının kendi onay aşaması
-  const [activeTab, setActiveTab] = useState<'all' | 'clerk' | 'deputy' | 'principal' | 'approved' | 'rejected'>(() => {
-    if (currentUser?.role === 'mudur_yardimcisi') return 'deputy';
-    if (currentUser?.role === 'okul_muduru') return 'principal';
-    if (currentUser?.role === 'memur') return 'clerk';
-    return 'all';
-  });
-
+  // Filtreler: Varsayılan olarak kullanıcının kendi onay aşaması veya tümü
+  const [activeTab, setActiveTab] = useState<'all' | 'clerk' | 'deputy' | 'principal' | 'approved' | 'rejected'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Detaylı İnceleme Modalı (Üzerine tıklayınca açılan)
@@ -97,31 +94,25 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
       if (currentUser.role === 'mudur_yardimcisi') {
         setActiveAdminRole('mudur_yardimcisi');
         setReviewerName(currentUser.fullName || 'Fudan FİDAN');
-        setActiveTab('deputy');
       } else if (currentUser.role === 'okul_muduru') {
         setActiveAdminRole('okul_muduru');
         setReviewerName(currentUser.fullName || 'Recep KIZILIRMAK');
-        setActiveTab('principal');
       } else if (currentUser.role === 'memur') {
         setActiveAdminRole('memur');
         setReviewerName(currentUser.fullName || 'Evrak Kayıt Memuru');
-        setActiveTab('clerk');
       }
     }
   }, [currentUser]);
 
-  // Rol değiştiğinde varsayılan isimleri güncelle
+  // Rol değiştiğinde yetkili adını güncelle
   const handleRoleChange = (role: 'memur' | 'mudur_yardimcisi' | 'okul_muduru') => {
     setActiveAdminRole(role);
     if (role === 'memur') {
-      setReviewerName('Evrak Kayıt Memuru');
-      setActiveTab('clerk');
+      setReviewerName(currentUser?.fullName || 'Evrak Kayıt Memuru');
     } else if (role === 'mudur_yardimcisi') {
-      setReviewerName('Fudan FİDAN');
-      setActiveTab('deputy');
+      setReviewerName(currentUser?.fullName || 'Fudan FİDAN');
     } else if (role === 'okul_muduru') {
-      setReviewerName('Recep KIZILIRMAK');
-      setActiveTab('principal');
+      setReviewerName(currentUser?.fullName || 'Recep KIZILIRMAK');
     }
   };
 
@@ -150,7 +141,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   const sortedPlans = [...filteredPlans].sort((a, b) => {
     const timeA = new Date(a.createdAt || a.documentDate || 0).getTime();
     const timeB = new Date(b.createdAt || b.documentDate || 0).getTime();
-    return timeA - timeB; // En eski en başta
+    return timeA - timeB; // En eski talep en üstte
   });
 
   const formatDate = (dateStr: string) => {
@@ -181,7 +172,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   const handleModalAdvance = (plan: GeziPlanData, role: 'memur' | 'mudur_yardimcisi' | 'okul_muduru') => {
     let defaultNote = '';
     if (role === 'memur') defaultNote = 'Ön inceleme ve mevzuat kontrolleri yapılmış olup evrak uygun görülmüştür.';
-    if (role === 'mudur_yardimcisi') defaultNote = 'Sosyal Etkinlikler Kurulu incelemesi tamamlanmış, uygun görüşle makama sunulmuştur.';
+    if (role === 'mudur_yardimcisi') defaultNote = 'Sosyal Etkinlikler Kurulu incelemesi tamamlanmış, uygun görüşle makama arz edilmiştir.';
     if (role === 'okul_muduru') defaultNote = 'Gezi planı incelenmiş, usul ve mevzuata uygun bulunarak MAKAM OLURU verilmiştir.';
 
     onAdvanceStage(plan.id, role, reviewerName, decisionNotes || defaultNote);
@@ -248,10 +239,10 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
 
         </div>
 
-        {/* 3 Sistemli Onay Makam Seçici Bar */}
+        {/* 3 Sistemli Onay Makam Seçici Bar & Üst Makam Yetki Açıklaması */}
         <div className="mt-4 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-indigo-200">Aktif İnceleme Yetkilisi:</span>
+            <span className="text-xs font-bold text-indigo-200">İşlem Yapan Yetkili:</span>
             <div className="flex flex-wrap items-center gap-1.5 bg-white/10 p-1 rounded-xl border border-white/15">
               
               {/* 1. Memur */}
@@ -320,6 +311,14 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
           </div>
         </div>
 
+        {/* Üst Makam Bilgilendirme Notu */}
+        <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-2 text-[11px] text-indigo-200">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span>
+            <strong>Hiyerarşik Onay Yetkisi:</strong> Üst makam (Müdür / Müdür Yrd.), alt birim henüz incelememiş olsa dahi beklemeden doğrudan inceleme yapabilir veya nihai Makam Oluru verebilir.
+          </span>
+        </div>
+
       </div>
 
       {/* ========================================================================= */}
@@ -351,7 +350,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
               <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider block">Makam Oluru (Onay)</span>
               <span className="text-2xl font-black text-emerald-700 mt-1 block">{analytics.approvedPlans} Kesin Onay</span>
-              <span className="text-[11px] text-slate-500 block mt-0.5">Yazdırılmaya Hazır</span>
+              <span className="text-[11px] text-slate-500 block mt-0.5">Yazdırılmaya & PDF İndirmeye Hazır</span>
             </div>
           </div>
 
@@ -384,7 +383,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
               <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 text-center">
                 <span className="text-[11px] font-bold text-emerald-800 uppercase block">4. Aşama: Onaylandı</span>
                 <span className="text-xl font-black text-emerald-900 my-1 block">{analytics.approvedPlans} Plan</span>
-                <span className="text-[10px] text-emerald-700 block">Resmi Olur Verildi</span>
+                <span className="text-[10px] text-emerald-700 block">Makam Oluru Verildi</span>
               </div>
             </div>
           </div>
@@ -601,7 +600,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       {isApproved && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Makam Oluru Verildi / Kesin Onaylandı</span>
+                          <span>Makam Oluru Verildi (ONAYLANDI)</span>
                         </span>
                       )}
 
@@ -623,7 +622,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       </span>
 
                       <span className="text-xs text-slate-400 font-medium">
-                        Talep Tarihi: {formatDate(plan.createdAt?.split('T')[0] || '')}
+                        Talep: {formatDate(plan.createdAt?.split('T')[0] || '')}
                       </span>
                     </div>
 
@@ -744,8 +743,37 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       <span>İncele & Onayla</span>
                     </button>
 
-                    {/* 1. Aşama Memur Hızlı Aksiyon */}
-                    {isClerkStage && (
+                    {/* HİYERARŞİK ONAY AKSİYONLARI:
+                        1. Okul Müdürü her an Makam Oluru verebilir
+                        2. Md. Yrd her an Uygun Görüş ile Müdüre sunabilir
+                        3. Memur 1. aşamada sevk edebilir */}
+                    
+                    {/* Okul Müdürü Yetkisi (Her zaman doğrudan onaylayabilir) */}
+                    {activeAdminRole === 'okul_muduru' && !isApproved && !isRejected && (
+                      <button
+                        type="button"
+                        onClick={() => onAdvanceStage(plan.id, 'okul_muduru', reviewerName, 'Makam oluru verilmiş ve gezi kesin olarak onaylanmıştır.')}
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Makam Oluru Ver (Onayla)</span>
+                      </button>
+                    )}
+
+                    {/* Müdür Yardımcısı Yetkisi (Memur beklemeden Müdüre sunabilir) */}
+                    {activeAdminRole === 'mudur_yardimcisi' && (isClerkStage || isDeputyStage) && (
+                      <button
+                        type="button"
+                        onClick={() => onAdvanceStage(plan.id, 'mudur_yardimcisi', reviewerName, 'Sosyal etkinlikler incelemesi yapılmış ve uygun görüşle makama sunulmuştur.')}
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition cursor-pointer"
+                      >
+                        <ArrowRight className="w-3.5 h-3.5" />
+                        <span>Müdür Oluruna Sun</span>
+                      </button>
+                    )}
+
+                    {/* Memur Yetkisi (1. Aşamada) */}
+                    {activeAdminRole === 'memur' && isClerkStage && (
                       <button
                         type="button"
                         onClick={() => onAdvanceStage(plan.id, 'memur', reviewerName, 'Ön inceleme ve evrak kontrolleri yapılmıştır.')}
@@ -756,32 +784,8 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       </button>
                     )}
 
-                    {/* 2. Aşama Müdür Yardımcısı Hızlı Aksiyon */}
-                    {isDeputyStage && (
-                      <button
-                        type="button"
-                        onClick={() => onAdvanceStage(plan.id, 'mudur_yardimcisi', reviewerName, 'Sosyal etkinlikler incelemesi yapılmış ve uygun görülmüştür.')}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-900 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 rounded-xl transition cursor-pointer"
-                      >
-                        <ArrowRight className="w-3.5 h-3.5" />
-                        <span>Müdür Oluruna Sun</span>
-                      </button>
-                    )}
-
-                    {/* 3. Aşama Okul Müdürü Hızlı Aksiyon */}
-                    {isPrincipalStage && (
-                      <button
-                        type="button"
-                        onClick={() => onAdvanceStage(plan.id, 'okul_muduru', reviewerName, 'Makam oluru verilmiş ve gezi onaylanmıştır.')}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-xl transition cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Makam Oluru Ver</span>
-                      </button>
-                    )}
-
                     {/* Düzeltme İste Butonu */}
-                    {(isClerkStage || isDeputyStage || isPrincipalStage) && (
+                    {!isApproved && !isRejected && (
                       <button
                         type="button"
                         onClick={() => setRejectingPlanId(plan.id)}
@@ -792,7 +796,20 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       </button>
                     )}
 
-                    {/* Resmi Yazdır / PDF Butonu */}
+                    {/* PDF İndir Butonu */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await generateAndDownloadPlanPDF(plan);
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-300 transition cursor-pointer"
+                      title="2 Sayfalık Resmi A4 Gezi Raporunu PDF Olarak İndir"
+                    >
+                      <FileDown className="w-3.5 h-3.5 text-red-600" />
+                      <span>PDF İndir</span>
+                    </button>
+
+                    {/* Resmi Yazdır Butonu */}
                     <button
                       type="button"
                       onClick={() => onPrintPlan(plan)}
@@ -860,6 +877,17 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             {/* Modal Body (Scrollable) */}
             <div className="p-5 sm:p-6 overflow-y-auto space-y-6">
               
+              {/* Teslim Zorunluluğu ve Onay Uyarısı */}
+              <div className="bg-amber-500/10 border border-amber-300 p-4 rounded-2xl flex items-start gap-3 text-xs text-amber-950">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold text-amber-900">RESMİ EVRAK VE ÇIKTI TESLİM KURALI:</strong>
+                  <span>
+                    Makam Oluru verilen gezi planlarının 2 sayfalık resmi çıktısının ıslak imzalı olarak gezi tarihinden önce (Belediye araç talepli gezilerde en az 15 gün, diğer gezilerde en az 7 gün önce) okul idaresine / evrak kayıt memuruna teslim edilmesi zorunludur.
+                  </span>
+                </div>
+              </div>
+
               {/* 3 Sistemli Onay Zinciri Durum Çubuğu */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
@@ -1020,15 +1048,29 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             <div className="bg-slate-100 p-4 sm:p-5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
               
               <div className="flex items-center gap-2">
+                {/* PDF İndir */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await generateAndDownloadPlanPDF(inspectingPlan);
+                  }}
+                  className="px-3.5 py-2 text-xs font-bold text-slate-800 bg-white hover:bg-slate-200 rounded-xl border border-slate-300 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <FileDown className="w-4 h-4 text-red-600" />
+                  <span>PDF İndir</span>
+                </button>
+
+                {/* Yazdır */}
                 <button
                   type="button"
                   onClick={() => onPrintPlan(inspectingPlan)}
                   className="px-3.5 py-2 text-xs font-bold text-slate-800 bg-white hover:bg-slate-200 rounded-xl border border-slate-300 flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Printer className="w-4 h-4 text-slate-600" />
-                  <span>2 Sayfa Çıktı / PDF</span>
+                  <span>2 Sayfa Çıktı</span>
                 </button>
 
+                {/* Formda Aç */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1041,21 +1083,24 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                   <span>Formda Aç</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setRejectingPlanId(inspectingPlan.id)}
-                  className="px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 flex items-center gap-1.5 cursor-pointer"
-                >
-                  <XCircle className="w-4 h-4" />
-                  <span>Düzeltme İste / İade Et</span>
-                </button>
+                {/* Düzeltme İste */}
+                {!inspectingPlan.status.startsWith('onaylandi') && (
+                  <button
+                    type="button"
+                    onClick={() => setRejectingPlanId(inspectingPlan.id)}
+                    className="px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Düzeltme İste / İade Et</span>
+                  </button>
+                )}
               </div>
 
-              {/* 3 Sistemli Yetkili Onay Butonları */}
+              {/* HİYERARŞİK ONAY BUTONLARI (MODAL İÇİ) */}
               <div className="flex items-center gap-2">
                 
                 {/* 1. Memur Ön İnceleme Butonu */}
-                {inspectingPlan.status === 'memur_incelemesinde' && (
+                {activeAdminRole === 'memur' && inspectingPlan.status === 'memur_incelemesinde' && (
                   <button
                     type="button"
                     onClick={() => handleModalAdvance(inspectingPlan, 'memur')}
@@ -1066,8 +1111,8 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                   </button>
                 )}
 
-                {/* 2. Müdür Yardımcısı Uygun Görüş Butonu */}
-                {inspectingPlan.status === 'mudur_yardimcisi_onayinda' && (
+                {/* 2. Müdür Yardımcısı Uygun Görüş Butonu (Memur aşamasında dahi olsa sevk edebilir) */}
+                {activeAdminRole === 'mudur_yardimcisi' && inspectingPlan.status !== 'onaylandi' && inspectingPlan.status !== 'reddedildi' && inspectingPlan.status !== 'mudur_onayinda' && (
                   <button
                     type="button"
                     onClick={() => handleModalAdvance(inspectingPlan, 'mudur_yardimcisi')}
@@ -1078,15 +1123,15 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                   </button>
                 )}
 
-                {/* 3. Okul Müdürü Makam Oluru Butonu */}
-                {inspectingPlan.status === 'mudur_onayinda' && (
+                {/* 3. Okul Müdürü Makam Oluru Butonu (Her aşamada doğrudan onaylayabilir) */}
+                {activeAdminRole === 'okul_muduru' && inspectingPlan.status !== 'onaylandi' && inspectingPlan.status !== 'reddedildi' && (
                   <button
                     type="button"
                     onClick={() => handleModalAdvance(inspectingPlan, 'okul_muduru')}
                     className="px-5 py-2.5 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-600/25 flex items-center gap-2 cursor-pointer active:scale-95 transition"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>3. Makam Oluru Ver (Kesin Onayla)</span>
+                    <span>3. Makam Oluru Ver (Doğrudan Onayla)</span>
                   </button>
                 )}
 

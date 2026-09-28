@@ -13,10 +13,12 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Printer
+  Printer,
+  FileDown
 } from 'lucide-react';
 import type { GeziPlanData, AuthUser } from '../types';
-import { checkFiveDaysRule } from '../services/db';
+import { checkTripDeadlineRule } from '../services/db';
+import { generateAndDownloadPlanPDF } from '../services/pdf';
 
 interface SavedPlansModalProps {
   isOpen: boolean;
@@ -155,7 +157,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
           ) : (
             <div className="space-y-3">
               {displayedPlans.map((plan) => {
-                const fiveDays = checkFiveDaysRule(plan.tripDate);
+                const deadlineCheck = checkTripDeadlineRule(plan.tripDate, plan.transportationType);
                 const isPendingClerk = plan.status === 'memur_incelemesinde';
                 const isPendingDeputy = plan.status === 'mudur_yardimcisi_onayinda';
                 const isPendingPrincipal = plan.status === 'mudur_onayinda';
@@ -237,13 +239,13 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
                         </div>
                       )}
 
-                      {/* 5-Day Warning / Countdown Badge */}
+                      {/* Deadline Warning / Countdown Badge */}
                       <div className="pt-0.5">
                         <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded ${
-                          fiveDays.isEditable ? 'bg-blue-50 text-blue-700' : 'bg-amber-100 text-amber-900 font-bold'
+                          deadlineCheck.isEditable ? 'bg-blue-50 text-blue-700' : 'bg-amber-100 text-amber-900 font-bold'
                         }`}>
                           <AlertTriangle className="w-3 h-3" />
-                          <span>{fiveDays.message}</span>
+                          <span>{deadlineCheck.message}</span>
                         </span>
                       </div>
 
@@ -251,6 +253,19 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
 
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
                       
+                      {/* PDF İndir Butonu */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await generateAndDownloadPlanPDF(plan);
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg shadow-xs transition flex items-center gap-1 cursor-pointer"
+                        title="2 Sayfalık Resmi A4 Gezi Raporunu PDF Olarak İndir"
+                      >
+                        <FileDown className="w-3.5 h-3.5 text-red-600" />
+                        <span>PDF İndir</span>
+                      </button>
+
                       {/* Onaylı İse Islak İmza İçin Çıktı Butonu */}
                       {isApproved && onPrintPlan && (
                         <button
@@ -260,7 +275,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
                             onClose();
                           }}
                           className="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition flex items-center gap-1 cursor-pointer"
-                          title="Okul idaresine sunmak üzere 2 sayfalık resmi çıktıyı yazdır"
+                          title="Okul idaresine teslim etmek üzere 2 sayfalık resmi çıktıyı yazdır"
                         >
                           <Printer className="w-3.5 h-3.5" />
                           <span>Resmi Çıktı / İdareye Sun</span>

@@ -12,7 +12,8 @@ import {
   LogOut,
   User,
   UserCheck,
-  Award
+  Award,
+  FileDown
 } from 'lucide-react';
 import type { UserRole, AuthUser } from '../types';
 
@@ -23,6 +24,7 @@ interface HeaderProps {
   onLogout: () => void;
   onNewPlan: () => void;
   onPrint: () => void;
+  onDownloadPDF?: () => void;
   onSave: () => void;
   onOpenHistory: () => void;
   onLoadSample: () => void;
@@ -38,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   onNewPlan,
   onPrint,
+  onDownloadPDF,
   onSave,
   onOpenHistory,
   onLoadSample,
@@ -203,6 +206,19 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
+            {/* PDF İndir Butonu */}
+            {onDownloadPDF && (
+              <button
+                onClick={onDownloadPDF}
+                type="button"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors cursor-pointer"
+                title="2 Sayfalık Resmi A4 Gezi Planını PDF Olarak İndir"
+              >
+                <FileDown className="w-4 h-4 text-red-600" />
+                <span className="hidden sm:inline">PDF İndir</span>
+              </button>
+            )}
+
             {/* Primary Print Button */}
             <button
               onClick={onPrint}
@@ -210,7 +226,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md shadow-red-500/25 rounded-lg transition-all active:scale-95 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Yazdır / PDF</span>
+              <span>Yazdır</span>
             </button>
           </div>
 

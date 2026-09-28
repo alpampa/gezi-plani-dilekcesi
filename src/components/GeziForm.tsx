@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Send,
   Save,
-  Footprints
+  Footprints,
+  FileDown
 } from 'lucide-react';
 import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem, GradeStudentRow, UserRole } from '../types';
 import { TURKISH_CITIES, ISTANBUL_DISTRICTS, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
@@ -29,6 +30,7 @@ interface GeziFormProps {
   data: GeziPlanData;
   onChange: (updated: Partial<GeziPlanData>) => void;
   onPrint: () => void;
+  onDownloadPDF?: () => void;
   onSubmitForApproval?: () => void;
   onSaveDraft?: () => void;
   userRole?: UserRole;
@@ -38,6 +40,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({
   data, 
   onChange, 
   onPrint, 
+  onDownloadPDF,
   onSubmitForApproval, 
   onSaveDraft,
   userRole = 'ogretmen'
@@ -1601,13 +1604,26 @@ export const GeziForm: React.FC<GeziFormProps> = ({
             </button>
           )}
 
+          {/* PDF İndir */}
+          {onDownloadPDF && (
+            <button
+              type="button"
+              onClick={onDownloadPDF}
+              className="px-4 py-3 bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/30 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              title="2 Sayfalık Resmi A4 Gezi Planını PDF Olarak İndir"
+            >
+              <FileDown className="w-4 h-4 text-white" />
+              <span>PDF İndir</span>
+            </button>
+          )}
+
           {/* Resmi Yazdır */}
           <button
             type="button"
             onClick={onPrint}
             className="px-4 py-3 bg-slate-900/40 hover:bg-slate-900/60 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/20 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>🖨️ Yazdır / PDF</span>
+            <span>🖨️ Yazdır</span>
           </button>
 
           {/* Onaya Gönder & Veritabanına Kaydet (Ana Buton) */}

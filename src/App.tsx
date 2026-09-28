@@ -17,6 +17,7 @@ import {
   sendReturnStatusEmail, 
   DEFAULT_SCHOOL_EMAIL 
 } from './services/db';
+import { generateAndDownloadPlanPDF } from './services/pdf';
 import { Eye, EyeOff, CheckCircle2, AlertCircle, Sparkles, GraduationCap, Building2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -336,6 +337,7 @@ export function App() {
         onLogout={handleLogout}
         onNewPlan={handleNewPlan}
         onPrint={handlePrint}
+        onDownloadPDF={() => generateAndDownloadPlanPDF(currentPlan)}
         onSave={handleSaveDraft}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onLoadSample={handleLoadSample}
@@ -433,6 +435,7 @@ export function App() {
               data={currentPlan}
               onChange={handleFormChange}
               onPrint={handlePrint}
+              onDownloadPDF={() => generateAndDownloadPlanPDF(currentPlan)}
               onSubmitForApproval={handleOpenApprovalModal}
               onSaveDraft={handleSaveDraft}
               userRole={userRole}
