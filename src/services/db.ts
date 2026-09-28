@@ -40,11 +40,11 @@ export function checkTripDeadlineRule(
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const tripDate = new Date(tripDateStr);
-    tripDate.setHours(0, 0, 0, 0);
+    const [year, month, day] = tripDateStr.split('-').map(Number);
+    const tripDate = new Date(year, month - 1, day, 0, 0, 0, 0);
 
     const diffTime = tripDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
       return {
@@ -120,7 +120,7 @@ RESMİ GEZİ RAPORU VE TALEP DETAYLARI:
 
 ONAY AŞAMALARI (3 SİSTEMLİ AKIŞ):
 1. Aşama: Evrak Kayıt Memuru Ön İncelemesi
-2. Aşama: Sosyal Etkinlikler Kurulu Bşk. (Müdür Yrd. Fudan FİDAN) Uygun Görüşü
+2. Aşama: Sosyal Etkinlikler Kurulu Bşk. (Müdür Yrd. Funda FİDAN) Uygun Görüşü
 3. Aşama: Okul Müdürü (Recep KIZILIRMAK) Nihai Makam Oluru
 
 ⚠️ YASAL BİLDİRİM VE EVRAK TESLİM UYARISI:
