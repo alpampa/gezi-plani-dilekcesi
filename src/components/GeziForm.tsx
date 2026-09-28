@@ -23,7 +23,7 @@ import {
 import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem, GradeStudentRow, UserRole } from '../types';
 import { TURKISH_CITIES, ISTANBUL_DISTRICTS, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
 import { CURRICULUM_DATA } from '../data/curriculum';
-import { checkFiveDaysRule } from '../services/db';
+import { checkTripDeadlineRule } from '../services/db';
 
 interface GeziFormProps {
   data: GeziPlanData;
@@ -42,8 +42,8 @@ export const GeziForm: React.FC<GeziFormProps> = ({
   onSaveDraft,
   userRole = 'ogretmen'
 }) => {
-  const fiveDaysStatus = checkFiveDaysRule(data.tripDate);
-  const isLockedForTeacher = userRole === 'ogretmen' && !fiveDaysStatus.isEditable && data.createdAt !== data.updatedAt;
+  const deadlineStatus = checkTripDeadlineRule(data.tripDate, data.transportationType);
+  const isLockedForTeacher = userRole === 'ogretmen' && !deadlineStatus.isEditable && data.createdAt !== data.updatedAt;
   // Curriculum selector state
   const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-1');
   const [selectedLessonName, setSelectedLessonName] = useState<string>('Hayat Bilgisi (Maarif Modeli)');
@@ -248,16 +248,16 @@ export const GeziForm: React.FC<GeziFormProps> = ({
   return (
     <div className="space-y-6 sm:space-y-8 pb-16">
       
-      {/* 5 GÜN KURALI VE KİLİT BİLGİLENDİRME BANNERI */}
+      {/* BİLDİRİM SÜRESİ VE KİLİT BİLGİLENDİRME BANNERI */}
       {isLockedForTeacher && (
         <div className="bg-amber-500 text-white rounded-2xl p-5 shadow-lg flex items-start gap-3.5 animate-in slide-in-from-top-3">
           <AlertTriangle className="w-6 h-6 text-amber-100 shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="text-sm font-black uppercase tracking-wider text-amber-100">
-              MEB Gezi Yönergesi 5 Gün Kuralı Kısıtlaması
+              MEB & Belediye Bildirim Süresi Kısıtlaması ({deadlineStatus.requiredDays} Gün Kuralı)
             </h3>
             <p className="text-xs text-white/95 mt-1 leading-relaxed">
-              {fiveDaysStatus.message}
+              {deadlineStatus.message}
             </p>
             <div className="mt-3 flex items-center gap-2">
               <button

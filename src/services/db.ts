@@ -15,16 +15,25 @@ export interface GitHubSyncConfig {
 }
 
 /**
- * 5 Gün Kuralı Kontrolü (MEB Gezi Yönergesi)
- * Öğretmen gezi tarihinden 5 gün öncesine kadar güncelleme yapabilir.
+ * MEB ve Belediye Bildirim Süresi / Güncelleme Kuralı Kontrolü:
+ * - Belediyeden araç talep edilecek gezilerde: En az 15 gün önceden bildirme zorunluluğu (diffDays >= 15).
+ * - Diğer tüm gezilerde (Özel Otobüs, Servis, Yürüyerek): En az 7 gün önceden bildirme zorunluluğu (diffDays >= 7).
+ * Öğretmen bu sürelere kadar güncelleme yapabilir.
  */
-export function checkFiveDaysRule(tripDateStr: string): {
+export function checkTripDeadlineRule(
+  tripDateStr: string,
+  transportationType?: string
+): {
   isEditable: boolean;
   daysRemaining: number;
-  message?: string;
+  requiredDays: number;
+  message: string;
 } {
+  const isMunicipality = transportationType === 'Belediye / Toplu Taşıma';
+  const requiredDays = isMunicipality ? 15 : 7;
+
   if (!tripDateStr) {
-    return { isEditable: true, daysRemaining: 999 };
+    return { isEditable: true, daysRemaining: 999, requiredDays, message: `Gezi Bildirim Süresi: En az ${requiredDays} gün önceden.` };
   }
 
   try {
@@ -37,25 +46,42 @@ export function checkFiveDaysRule(tripDateStr: string): {
     const diffTime = tripDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 5) {
+    if (diffDays < 0) {
       return {
         isEditable: false,
         daysRemaining: diffDays,
-        message: diffDays < 0
-          ? 'Gezi tarihi geçmiştir. Geçmiş tarihli planlar düzenlenemez, sadece resmi arşiv çıktısı alınabilir.'
-          : `Gezi tarihine ${diffDays} gün kalmıştır. MEB Gezi Yönergesi gereği gezi tarihine 5 günden az kaldığından planda değişiklik yapılamaz, sadece resmi çıktı alınabilir.`
+        requiredDays,
+        message: 'Gezi tarihi geçmiştir. Geçmiş tarihli planlar güncellenemez, sadece resmi arşiv çıktısı alınabilir.'
+      };
+    }
+
+    if (diffDays < requiredDays) {
+      return {
+        isEditable: false,
+        daysRemaining: diffDays,
+        requiredDays,
+        message: isMunicipality
+          ? `Belediyeden araç talep edilecek gezilerde en az 15 gün önceden bildirme zorunluluğu bulunmaktadır. Gezi tarihine ${diffDays} gün kaldığından planda değişiklik yapılamaz, sadece resmi çıktı alınabilir.`
+          : `MEB Gezi Yönergesi gereği gezi tarihine en az 7 gün önceden bildirme zorunluluğu bulunmaktadır. Gezi tarihine ${diffDays} gün kaldığından planda değişiklik yapılamaz, sadece resmi çıktı alınabilir.`
       };
     }
 
     return {
       isEditable: true,
       daysRemaining: diffDays,
-      message: `Geziye ${diffDays} gün var (Düzenleme yapılabilir).`
+      requiredDays,
+      message: isMunicipality
+        ? `Belediye Araç Talepli Gezi (15 Gün Kuralı): Geziye ${diffDays} gün var (Güncelleme yapılabilir).`
+        : `Standart Gezi (7 Gün Kuralı): Geziye ${diffDays} gün var (Güncelleme yapılabilir).`
     };
   } catch {
-    return { isEditable: true, daysRemaining: 999 };
+    return { isEditable: true, daysRemaining: 999, requiredDays, message: 'Düzenleme yapılabilir.' };
   }
 }
+
+// Geriye dönük uyumluluk aliası
+export const checkFiveDaysRule = (tripDateStr: string, transportationType?: string) => 
+  checkTripDeadlineRule(tripDateStr, transportationType);
 
 /**
  * E-posta Gönderim Şablonu Oluşturucu & Mailto Tetikleyici
