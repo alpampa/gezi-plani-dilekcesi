@@ -36,8 +36,8 @@ const ADMIN_TITLE_OPTIONS: AdminTitleOption[] = [
   },
   {
     id: 'mudur_yardimcisi',
-    title: '2. Müdür Yardımcısı — Fudan FİDAN (Sosyal Etk. Bşk.)',
-    defaultName: 'Fudan FİDAN',
+    title: '2. Müdür Yardımcısı — Funda FİDAN (Sosyal Etk. Bşk.)',
+    defaultName: 'Funda FİDAN',
     badge: '2. Uygun Görüş'
   },
   {
@@ -55,8 +55,8 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
   // 2. Okul İdaresi İçin Seçili Alt Ünvan
   const [selectedAdminRole, setSelectedAdminRole] = useState<UserRole>('mudur_yardimcisi');
 
-  // 3. Ortak Bilgiler (Varsayılan e-posta boş, ilgili kişi yazacak)
-  const [fullName, setFullName] = useState<string>('');
+  // 3. Ortak Bilgiler (Öğretmen ad soyad girer; İdarede unvanın yanındaki isim otomatik kullanılır)
+  const [teacherName, setTeacherName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [rememberMe, setRememberMe] = useState<boolean>(false);
 
@@ -68,7 +68,7 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
         const parsed = JSON.parse(saved);
         if (parsed.mainCategory) setMainCategory(parsed.mainCategory);
         if (parsed.adminRole) setSelectedAdminRole(parsed.adminRole);
-        if (parsed.fullName) setFullName(parsed.fullName);
+        if (parsed.teacherName) setTeacherName(parsed.teacherName);
         if (parsed.email) setEmail(parsed.email);
         setRememberMe(true);
       }
@@ -78,34 +78,29 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
   // Ana Kategori (Öğretmen / Okul İdaresi) değiştiğinde
   const handleSelectMainCategory = (cat: MainCategory) => {
     setMainCategory(cat);
-    if (cat === 'ogretmen') {
-      const saved = localStorage.getItem(STORAGE_REMEMBER_AUTH_V4);
-      if (!saved) {
-        setFullName('');
-        setEmail('');
-      }
-    } else {
-      const found = ADMIN_TITLE_OPTIONS.find(o => o.id === selectedAdminRole) || ADMIN_TITLE_OPTIONS[1];
-      setFullName(found.defaultName);
-    }
   };
 
   // İdare Açılır Menü Ünvan Seçimi
   const handleAdminDropdownChange = (roleId: UserRole) => {
     setSelectedAdminRole(roleId);
-    const found = ADMIN_TITLE_OPTIONS.find(o => o.id === roleId);
-    if (found) {
-      setFullName(found.defaultName);
-    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fullName.trim()) {
-      alert('Lütfen Adınızı ve Soyadınızı giriniz.');
-      return;
+    let finalFullName = '';
+
+    if (mainCategory === 'ogretmen') {
+      if (!teacherName.trim()) {
+        alert('Lütfen Adınızı ve Soyadınızı giriniz.');
+        return;
+      }
+      finalFullName = teacherName.trim();
+    } else {
+      const foundAdmin = ADMIN_TITLE_OPTIONS.find(o => o.id === selectedAdminRole);
+      finalFullName = foundAdmin ? foundAdmin.defaultName : 'Okul İdaresi';
     }
+
     if (!email.trim()) {
       alert('Lütfen E-posta adresinizi giriniz.');
       return;
@@ -117,7 +112,7 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
       localStorage.setItem(STORAGE_REMEMBER_AUTH_V4, JSON.stringify({
         mainCategory,
         adminRole: selectedAdminRole,
-        fullName: fullName.trim(),
+        teacherName: teacherName.trim(),
         email: email.trim().toLowerCase()
       }));
     } else {
@@ -126,7 +121,7 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
 
     let title = 'Öğretmen / Kafile Başkanı';
     if (mainCategory === 'idare') {
-      if (selectedAdminRole === 'memur') title = 'Evrak Kayıt Memuru';
+      if (selectedAdminRole === 'memur') title = 'Evrak Kayıt Memuru (Ön İnceleme)';
       else if (selectedAdminRole === 'mudur_yardimcisi') title = 'Müdür Yardımcısı (Sosyal Etkinlikler Kurulu Bşk.)';
       else if (selectedAdminRole === 'okul_muduru') title = 'Okul Müdürü (Makam Oluru)';
       else title = 'Okul İdaresi';
@@ -134,11 +129,13 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
 
     onLogin({
       email: email.trim().toLowerCase(),
-      fullName: fullName.trim(),
+      fullName: finalFullName,
       role: effectiveRole,
       title
     });
   };
+
+  const selectedAdminObj = ADMIN_TITLE_OPTIONS.find(o => o.id === selectedAdminRole) || ADMIN_TITLE_OPTIONS[1];
 
   return (
     <div className="h-screen w-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-3 sm:p-4 overflow-hidden selection:bg-red-500 selection:text-white">
@@ -227,10 +224,10 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
             </div>
 
             {/* 2. Okul İdaresi Seçildiğinde Açılır Menü (Dropdown/Select) */}
-            {mainCategory === 'idare' && (
-              <div className="p-2.5 bg-indigo-50/70 rounded-xl border border-indigo-200 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+            {mainCategory === 'idare' ? (
+              <div className="p-3 bg-indigo-50/70 rounded-xl border border-indigo-200 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
                 <label className="block text-[10px] font-bold text-indigo-950 uppercase tracking-wider flex items-center justify-between">
-                  <span>İdari Ünvan Seçiniz: <span className="text-red-500">*</span></span>
+                  <span>İdari Ünvan & Yetkili Seçiniz: <span className="text-red-500">*</span></span>
                   <span className="text-[9px] text-indigo-700 font-semibold">Açılır Menü</span>
                 </label>
 
@@ -248,24 +245,29 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
                   </select>
                   <ChevronDown className="w-4 h-4 text-indigo-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
+
+                <div className="flex items-center justify-between text-[11px] px-1 text-indigo-900 font-medium pt-0.5">
+                  <span>Yetkili İdareci: <strong className="font-bold text-indigo-950">{selectedAdminObj.defaultName}</strong></span>
+                  <span className="text-[10px] px-2 py-0.5 bg-indigo-200/80 text-indigo-900 rounded-md font-bold">{selectedAdminObj.badge}</span>
+                </div>
+              </div>
+            ) : (
+              /* 3. Öğretmen İçin Ad Soyad Girişi */
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Adınız ve Soyadınız <span className="text-red-500">*</span></span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={teacherName}
+                  onChange={(e) => setTeacherName(e.target.value)}
+                  placeholder="Adınızı ve Soyadınızı giriniz..."
+                  className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                />
               </div>
             )}
-
-            {/* 3. Ad Soyad */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-slate-400" />
-                <span>Adınız ve Soyadınız <span className="text-red-500">*</span></span>
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder={mainCategory === 'ogretmen' ? 'Adınızı ve Soyadınızı giriniz...' : 'İdareci Adı ve Soyadı'}
-                className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
-              />
-            </div>
 
             {/* 4. E-Posta (Varsayılan olarak boş, ilgili kişi yazacak) */}
             <div>

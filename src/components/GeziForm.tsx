@@ -1582,7 +1582,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({
               MEB Onay Süreci
             </span>
             <span className="text-xs text-red-200">
-              Müdür: Recep KIZILIRMAK | Md. Yrd: Fudan FİDAN
+              Müdür: Recep KIZILIRMAK | Md. Yrd: Funda FİDAN | Memur: Sultan YILDIRIM
             </span>
           </div>
           <h3 className="text-lg font-black tracking-tight">Gezi Planı ve Dilekçeniz Hazır mı?</h3>

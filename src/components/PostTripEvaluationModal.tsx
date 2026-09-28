@@ -570,7 +570,7 @@ export const PostTripEvaluationModal: React.FC<PostTripEvaluationModalProps> = (
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-[10px] uppercase font-bold text-slate-500 block">Sosyal Etkinlikler Kurulu</span>
               <span className="font-bold text-slate-900 block mt-1">
-                {plan.deputyPrincipalName || 'Fudan FİDAN'}
+                {plan.deputyPrincipalName || 'Funda FİDAN'}
               </span>
               <span className="text-[10px] text-slate-500 block">Müdür Yardımcısı</span>
               <div className="mt-4 border-b border-dashed border-slate-400 w-24 mx-auto"></div>

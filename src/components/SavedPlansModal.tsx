@@ -194,7 +194,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
                         {isPendingDeputy && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-800 border border-indigo-300 flex items-center gap-1 animate-pulse">
                             <Clock className="w-3 h-3" />
-                            <span>2. Aşama: Fudan FİDAN (Md. Yrd.) Onayında</span>
+                            <span>2. Aşama: Funda FİDAN (Md. Yrd.) Onayında</span>
                           </span>
                         )}
                         {isPendingPrincipal && (

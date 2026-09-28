@@ -392,7 +392,7 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
               <div className="border border-black p-1.5 flex flex-col justify-between min-h-[90px] bg-gray-50/50">
                 <div>
                   <p className="font-extrabold text-[9.5px] uppercase">3. İNCELENDİ / UYGUNDUR</p>
-                  <p className="text-[9px] font-bold text-gray-800 mt-1">{data.deputyPrincipalName || 'Fudan FİDAN'}</p>
+                  <p className="text-[9px] font-bold text-gray-800 mt-1">{data.deputyPrincipalName || 'Funda FİDAN'}</p>
                   <p className="text-[8px] text-gray-600">Müdür Yardımcısı</p>
                 </div>
                 <p className="text-[8.5px] italic mt-2">İmza</p>

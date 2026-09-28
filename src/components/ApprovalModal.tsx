@@ -156,11 +156,11 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
             <div className="grid grid-cols-3 gap-2 text-center text-[10.5px] pt-1">
               <div className="bg-white p-2 rounded-lg border border-indigo-200 font-semibold text-slate-800">
                 <span className="text-[9px] text-indigo-600 block uppercase font-bold">1. Aşama</span>
-                Memur Ön İnceleme
+                Memur Sultan YILDIRIM
               </div>
               <div className="bg-white p-2 rounded-lg border border-indigo-200 font-semibold text-slate-800">
                 <span className="text-[9px] text-indigo-600 block uppercase font-bold">2. Aşama</span>
-                Md. Yrd. Fudan FİDAN
+                Md. Yrd. Funda FİDAN
               </div>
               <div className="bg-white p-2 rounded-lg border border-indigo-200 font-semibold text-slate-800">
                 <span className="text-[9px] text-indigo-600 block uppercase font-bold">3. Aşama</span>

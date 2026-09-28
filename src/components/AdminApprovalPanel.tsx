@@ -72,7 +72,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
 
   const [reviewerName, setReviewerName] = useState<string>(() => {
     if (currentUser?.fullName) return currentUser.fullName;
-    if (currentUser?.role === 'mudur_yardimcisi') return 'Fudan FİDAN';
+    if (currentUser?.role === 'mudur_yardimcisi') return 'Funda FİDAN';
     if (currentUser?.role === 'okul_muduru') return 'Recep KIZILIRMAK';
     return 'Sultan YILDIRIM';
   });
@@ -124,7 +124,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
     if (currentUser) {
       if (currentUser.role === 'mudur_yardimcisi') {
         setActiveAdminRole('mudur_yardimcisi');
-        setReviewerName(currentUser.fullName || 'Fudan FİDAN');
+        setReviewerName(currentUser.fullName || 'Funda FİDAN');
       } else if (currentUser.role === 'okul_muduru') {
         setActiveAdminRole('okul_muduru');
         setReviewerName(currentUser.fullName || 'Recep KIZILIRMAK');
@@ -141,7 +141,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
     if (role === 'memur') {
       setReviewerName(currentUser?.fullName || 'Sultan YILDIRIM');
     } else if (role === 'mudur_yardimcisi') {
-      setReviewerName(currentUser?.fullName || 'Fudan FİDAN');
+      setReviewerName(currentUser?.fullName || 'Funda FİDAN');
     } else if (role === 'okul_muduru') {
       setReviewerName(currentUser?.fullName || 'Recep KIZILIRMAK');
     }
@@ -349,7 +349,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
-                <span>2. Fudan FİDAN (Uygun Görüş)</span>
+                <span>2. Funda FİDAN (Uygun Görüş)</span>
                 {generalAnalytics.pendingDeputy > 0 && (
                   <span className="px-1.5 py-0.2 text-[10px] bg-indigo-950 text-indigo-100 rounded-full font-black">
                     {generalAnalytics.pendingDeputy}
@@ -478,7 +478,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                   <option value="all">Tüm Durumlar</option>
                   <option value="onaylandi">Makam Oluru Verildi (Kesin Onaylı)</option>
                   <option value="memur_incelemesinde">1. Memur Ön İncelemesinde</option>
-                  <option value="mudur_yardimcisi_onayinda">2. Md. Yrd. (Fudan FİDAN) Onayında</option>
+                  <option value="mudur_yardimcisi_onayinda">2. Md. Yrd. (Funda FİDAN) Onayında</option>
                   <option value="mudur_onayinda">3. Okul Müdürü (Recep KIZILIRMAK) Olurunda</option>
                   <option value="reddedildi">Düzeltme İstenmiş / İade Edildi</option>
                 </select>
@@ -881,7 +881,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
           <h3 className="text-base font-bold text-slate-700">Bu sekmede gösterilecek gezi planı bulunamadı</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             {activeTab === 'clerk' && 'Memur ön incelemesinde bekleyen yeni gezi planı bulunmamaktadır.'}
-            {activeTab === 'deputy' && 'Müdür Yardımcısı (Fudan FİDAN) incelemesinde bekleyen gezi planı bulunmamaktadır.'}
+            {activeTab === 'deputy' && 'Müdür Yardımcısı (Funda FİDAN) incelemesinde bekleyen gezi planı bulunmamaktadır.'}
             {activeTab === 'principal' && 'Okul Müdürü (Recep KIZILIRMAK) makam olurunda bekleyen gezi planı bulunmamaktadır.'}
             {activeTab === 'approved' && 'Henüz kesin onaylanmış bir gezi planı bulunmuyor.'}
             {activeTab === 'all' && 'Kriterlerinize uygun gezi planı bulunamadı.'}
@@ -931,7 +931,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       {isDeputyStage && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-indigo-100 text-indigo-900 border border-indigo-300 animate-pulse">
                           <Building2 className="w-3.5 h-3.5" />
-                          <span>2. Aşama: Fudan FİDAN (Uygun Görüş)</span>
+                          <span>2. Aşama: Funda FİDAN (Uygun Görüş)</span>
                         </span>
                       )}
 
@@ -1306,7 +1306,7 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       <span>2. Aşama: Uygun Görüş</span>
                       {inspectingPlan.deputyApprovedAt ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Clock className="w-4 h-4 text-indigo-600" />}
                     </div>
-                    <span className="text-[11px] font-semibold block">Fudan FİDAN (Md. Yrd.)</span>
+                    <span className="text-[11px] font-semibold block">Funda FİDAN (Md. Yrd.)</span>
                     <span className="text-[10px] text-slate-500 block mt-1">
                       {inspectingPlan.deputyApprovedBy ? `${inspectingPlan.deputyApprovedBy} (${formatDate(inspectingPlan.deputyApprovedAt?.split('T')[0] || '')})` : 'Görüş Bekliyor'}
                     </span>

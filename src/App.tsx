@@ -42,7 +42,7 @@ export function App() {
     id: 'gezi-' + Date.now(),
     documentNumber: '',
     principalName: 'Recep KIZILIRMAK',
-    deputyPrincipalName: 'Fudan FİDAN',
+    deputyPrincipalName: 'Funda FİDAN',
     schoolEmail: DEFAULT_SCHOOL_EMAIL,
     teacherEmail: user?.email || '',
     headTeacher: {
@@ -127,7 +127,7 @@ export function App() {
       id: 'gezi-' + Date.now(),
       documentNumber: '',
       principalName: 'Recep KIZILIRMAK',
-      deputyPrincipalName: 'Fudan FİDAN',
+      deputyPrincipalName: 'Funda FİDAN',
       schoolEmail: DEFAULT_SCHOOL_EMAIL,
       teacherEmail: currentUser?.email || 'ogretmen@meb.k12.tr',
       status: 'taslak',

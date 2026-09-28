@@ -65,7 +65,7 @@ export const EmailEngineModal: React.FC<EmailEngineModalProps> = ({
       documentDate: new Date().toISOString().split('T')[0],
       documentNumber: '2026/TEST-01',
       principalName: 'Recep KIZILIRMAK',
-      deputyPrincipalName: 'Fudan FİDAN',
+      deputyPrincipalName: 'Funda FİDAN',
       destinationCategory: 'Müze',
       destinationMode: 'preset',
       selectedCity: 'İstanbul',
