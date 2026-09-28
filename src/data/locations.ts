@@ -13,6 +13,15 @@ export const TURKISH_CITIES = [
   'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce'
 ];
 
+export const ISTANBUL_DISTRICTS = [
+  'Üsküdar', 'Kadıköy', 'Ataşehir', 'Beşiktaş', 'Beyoğlu', 'Fatih', 'Sarıyer',
+  'Adalar', 'Arnavutköy', 'Avcılar', 'Bağcılar', 'Bahçelievler', 'Bakırköy', 'Başakşehir',
+  'Bayrampaşa', 'Beykoz', 'Beylikdüzü', 'Büyükçekmece', 'Çatalca', 'Çekmeköy', 'Esenler',
+  'Esenyurt', 'Eyüpsultan', 'Gaziosmanpaşa', 'Güngören', 'Kağıthane', 'Kartal',
+  'Küçükçekmece', 'Maltepe', 'Pendik', 'Sancaktepe', 'Silivri', 'Sultanbeyli', 'Sultangazi',
+  'Şile', 'Şişli', 'Tuzla', 'Ümraniye', 'Zeytinburnu'
+];
+
 export const CATEGORIES = [
   'Müze',
   'Bilim Merkezi / Rasathane',
@@ -20,9 +29,10 @@ export const CATEGORIES = [
   'Tabiat Parkı / Doğa / Botanik',
   'Kütüphane / Arşiv',
   'Sanat Galerisi / Tiyatro / Kültür Merkezi',
+  'Açık Hava / Spor / Doğa Parkuru',
   'Üniversite / Teknokent / Laboratuvar',
   'Kamu Kurumu / Fabrika / Üretim Tesisi',
-  'Diğer / Liste Dışı Özel Mekân'
+  'Liste Dışı / Özel Etkinlik Alanı'
 ];
 
 export const PRESET_LOCATIONS: PresetLocation[] = [

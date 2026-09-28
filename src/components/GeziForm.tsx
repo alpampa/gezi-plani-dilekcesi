@@ -17,7 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem } from '../types';
-import { TURKISH_CITIES, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
+import { TURKISH_CITIES, ISTANBUL_DISTRICTS, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
 import { CURRICULUM_DATA } from '../data/curriculum';
 
 interface GeziFormProps {
@@ -203,26 +203,43 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               İl <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={data.city}
-              onChange={(e) => onChange({ city: e.target.value })}
-              placeholder="Örn: İstanbul"
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                list="city-options"
+                value={data.city}
+                onChange={(e) => onChange({ city: e.target.value })}
+                placeholder="Örn: İstanbul"
+                className="w-full px-3.5 py-2 text-sm font-medium rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition bg-white"
+              />
+              <datalist id="city-options">
+                {TURKISH_CITIES.map(c => <option key={c} value={c} />)}
+              </datalist>
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              İlçe <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={data.district}
-              onChange={(e) => onChange({ district: e.target.value })}
-              placeholder="Örn: Üsküdar"
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition"
-            />
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700">
+                İlçe <span className="text-red-500">*</span>
+              </label>
+              <span className="text-[10px] font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded">
+                Üsküdar Tanımlı
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                list="district-options"
+                value={data.district}
+                onChange={(e) => onChange({ district: e.target.value })}
+                placeholder="Örn: Üsküdar"
+                className="w-full px-3.5 py-2 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition bg-white text-slate-900"
+              />
+              <datalist id="district-options">
+                {ISTANBUL_DISTRICTS.map(d => <option key={d} value={d} />)}
+              </datalist>
+            </div>
           </div>
 
           <div>
@@ -304,7 +321,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
         </div>
       </section>
 
-      {/* 2. GEZİ MEKÂNI VE LİSTE DIŞI SERBEST GİRİŞ BÖLÜMÜ */}
+      {/* 2. GEZİ MEKÂNI VE LİSTE DIŞI SERBEST ETKİNLİK ALANI GİRİŞİ */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 shadow-xs border border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
@@ -313,10 +330,10 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                2. Gezi Yeri / Mekânı ve Türü
+                2. Gezi Yeri / Etkinlik Alanı ve Türü
               </h2>
               <p className="text-xs sm:text-sm text-slate-500">
-                Mekânı EBA/MEB listesinden seçebilir veya liste dışı elle serbestçe yazabilirsiniz
+                Mekânı hazır listeden seçebilir veya liste dışı istediğiniz etkinlik alanını serbestçe yazabilirsiniz
               </p>
             </div>
           </div>
@@ -343,7 +360,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              ✍️ Liste Dışı / Elle Yaz
+              ✍️ Liste Dışı / Elle Etkinlik Alanı Yaz
             </button>
           </div>
         </div>
@@ -412,17 +429,55 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
             </div>
           </div>
         ) : (
-          <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4 mb-5">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50/60 border border-amber-200 rounded-xl p-4 mb-5 space-y-3">
             <div className="flex items-start gap-2.5">
               <Edit3 className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-xs sm:text-sm font-bold text-amber-900">
-                  Liste Dışı Özel Mekân Modu Aktif
+                  ✍️ Liste Dışı Serbest Etkinlik Alanı Modu Aktif
                 </h4>
                 <p className="text-xs text-amber-700 mt-0.5">
-                  EBA listesinde yer almayan herhangi bir okullar arası ziyaret, özel atölye, fabrika, çiftlik, botanik bahçe, tiyatro vb. yer bilgisini serbestçe girebilirsiniz.
+                  EBA listesinde yer almayan herhangi bir okullar arası ziyaret, çocuk tiyatrosu, spor tesisi, doğa parkuru, üretim fabrikası, botanik bahçe veya atölye alanını serbestçe aşağıya yazabilirsiniz.
                 </p>
               </div>
+            </div>
+
+            {/* Hızlı Örnek Liste Dışı Etkinlik Alanı Butonları */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-amber-800 mr-1">Hızlı Doldur:</span>
+              <button
+                type="button"
+                onClick={() => onChange({
+                  destinationName: 'Üsküdar Çamlıca Tabiat ve Yürüyüş Parkuru',
+                  destinationAddress: 'Küçük Çamlıca Mah. Üsküdar / İstanbul',
+                  destinationCategory: 'Açık Hava / Spor / Doğa Parkuru'
+                })}
+                className="px-2 py-1 text-[11px] font-medium bg-white hover:bg-amber-100/70 text-amber-900 rounded border border-amber-300 transition cursor-pointer"
+              >
+                🌲 Çamlıca Tabiat Parkuru
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({
+                  destinationName: 'Üsküdar Belediyesi Gençlik ve Çocuk Sahnesi',
+                  destinationAddress: 'Mimar Sinan Mah. Çavuşdere Cad. Üsküdar / İstanbul',
+                  destinationCategory: 'Sanat Galerisi / Tiyatro / Kültür Merkezi'
+                })}
+                className="px-2 py-1 text-[11px] font-medium bg-white hover:bg-amber-100/70 text-amber-900 rounded border border-amber-300 transition cursor-pointer"
+              >
+                🎭 Çocuk Tiyatro Sahnesi
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({
+                  destinationName: 'Özel Kodlama & Robotik Tasarım Atölyesi',
+                  destinationAddress: 'Altunizade Mah. Kısıklı Cad. Üsküdar / İstanbul',
+                  destinationCategory: 'Üniversite / Teknokent / Laboratuvar'
+                })}
+                className="px-2 py-1 text-[11px] font-medium bg-white hover:bg-amber-100/70 text-amber-900 rounded border border-amber-300 transition cursor-pointer"
+              >
+                🤖 Robotik Atölyesi
+              </button>
             </div>
           </div>
         )}
@@ -431,14 +486,14 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Gezi Yeri / Mekân Adı <span className="text-red-500">*</span>
+              Gezi Yeri / Etkinlik Alanı Adı <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={data.destinationName}
                 onChange={(e) => onChange({ destinationName: e.target.value })}
-                placeholder="Örn: Rahmi M. Koç Müzesi veya Kadıköy Belediyesi Çocuk Sanat Merkezi"
+                placeholder="Örn: Rahmi M. Koç Müzesi, Çamlıca Parkı veya Özel Robotik Atölyesi"
                 className="w-full pl-3.5 pr-8 py-2.5 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
               />
               <MapPin className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
@@ -447,43 +502,62 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Mekânın Açık Adresi / Bulunduğu İl-İlçe
+              Etkinlik Alanı Kategorisi / Türü
+            </label>
+            <select
+              value={data.destinationCategory}
+              onChange={(e) => onChange({ destinationCategory: e.target.value })}
+              className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Etkinlik Alanının Açık Adresi / Bulunduğu İl-İlçe
             </label>
             <input
               type="text"
               value={data.destinationAddress}
               onChange={(e) => onChange({ destinationAddress: e.target.value })}
-              placeholder="Örn: Hasköy Cad. No:5 Hasköy, Beyoğlu / İstanbul"
+              placeholder="Örn: Hasköy Cad. No:5 Hasköy, Beyoğlu / İstanbul veya Üsküdar / İstanbul"
               className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Gezi Kapsamı
-            </label>
-            <select
-              value={data.tripType}
-              onChange={(e) => onChange({ tripType: e.target.value as any })}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
-            >
-              <option value="İl İçi">İl İçi Gezi</option>
-              <option value="İl Dışı">İl Dışı Gezi (İl MEM / Mülki İdare Onaylı)</option>
-            </select>
-          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Gezi Kapsamı
+              </label>
+              <select
+                value={data.tripType}
+                onChange={(e) => onChange({ tripType: e.target.value as any })}
+                className="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="İl İçi">İl İçi Gezi</option>
+                <option value="İl Dışı">İl Dışı Gezi (İl MEM Onaylı)</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Konaklama Durumu
-            </label>
-            <select
-              value={data.tripDuration}
-              onChange={(e) => onChange({ tripDuration: e.target.value as any })}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
-            >
-              <option value="Günübirlik">Günübirlik</option>
-              <option value="Konaklamalı">Konaklamalı Gezi</option>
-            </select>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Süre
+              </label>
+              <select
+                value={data.tripDuration}
+                onChange={(e) => onChange({ tripDuration: e.target.value as any })}
+                className="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="Günübirlik">Günübirlik</option>
+                <option value="Konaklamalı">Konaklamalı</option>
+              </select>
+            </div>
           </div>
         </div>
       </section>
