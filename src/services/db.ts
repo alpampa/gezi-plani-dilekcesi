@@ -120,6 +120,107 @@ ${plan.schoolName} Gezi ve İnceleme Kulübü`;
 }
 
 /**
+ * Onay Durum Değişikliği E-posta Bildirimi
+ */
+export function sendApprovalStatusEmail(
+  plan: GeziPlanData,
+  stageName: string,
+  reviewerName: string,
+  isFinalApproval: boolean = false
+): void {
+  const teacherEmail = plan.teacherEmail || '';
+  const schoolEmail = plan.schoolEmail || DEFAULT_SCHOOL_EMAIL;
+  
+  const subject = encodeURIComponent(
+    `[${isFinalApproval ? 'MAKAM OLURU VERİLDİ - ONAYLANDI' : 'GEZİ PLANI ONAY AŞAMASI GÜNCELLENDİ'}] ${plan.destinationName} (${plan.targetGrades})`
+  );
+
+  const bodyContent = `Sayın Öğretmenimiz,
+
+Okulumuz ${plan.schoolName} bünyesinde düzenleyeceğiniz "${plan.destinationName}" okul dışı öğrenme gezi planınızın onay durumu güncellenmiştir.
+
+GÜNCEL DURUM BİLGİSİ:
+--------------------------------------------------
+• İşlem Yapan Yetkili: ${reviewerName}
+• Onay Aşaması: ${stageName}
+• Gezi Mekânı: ${plan.destinationName} (${plan.selectedDistrict} / ${plan.selectedCity})
+• Gezi Tarihi: ${plan.tripDate} (${plan.departureTime} - ${plan.returnTime})
+• Katılımcı: ${plan.totalStudentCount} Öğrenci (${plan.targetGrades})
+
+${isFinalApproval ? `
+TEBRİKLER! Gezi planınız Okul Müdürü Recep KIZILIRMAK tarafından incelenmiş, uygun görülmüş ve MAKAM OLURU VERİLMİŞTİR.
+Lütfen sistem üzerinden "Resmi Çıktı / PDF" butonuna basarak 2 sayfalık resmi A4 gezi planı ve dilekçenizi yazdırıp ıslak imza için okul idaresine teslim ediniz.
+` : `
+Planınız bir sonraki onay aşamasına başarıyla iletilmiştir. Süreci sistem üzerinden takip edebilirsiniz.
+`}
+
+Bilgilerinize sunulur.
+${plan.schoolName} Müdürlüğü`;
+
+  const body = encodeURIComponent(bodyContent);
+  const toEmails = [teacherEmail, schoolEmail].filter(Boolean).join(',');
+  const mailtoUrl = `mailto:${toEmails}?subject=${subject}&body=${body}`;
+
+  try {
+    const link = document.createElement('a');
+    link.href = mailtoUrl;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (e) {
+    console.warn('Mailto açılamadı:', e);
+  }
+}
+
+/**
+ * İade / Düzeltme Talebi E-posta Bildirimi
+ */
+export function sendReturnStatusEmail(
+  plan: GeziPlanData,
+  reviewerName: string,
+  returnNote: string
+): void {
+  const teacherEmail = plan.teacherEmail || '';
+  const schoolEmail = plan.schoolEmail || DEFAULT_SCHOOL_EMAIL;
+
+  const subject = encodeURIComponent(
+    `[DÜZELTME / İADE TALEBİ] ${plan.destinationName} Gezi Planı İadesi`
+  );
+
+  const bodyContent = `Sayın Öğretmenimiz,
+
+Okulumuz ${plan.schoolName} bünyesinde hazırlamış olduğunuz "${plan.destinationName}" gezi planınızda okul idaresi tarafından düzeltme / revizyon talep edilmiştir.
+
+İADE VE DÜZELTME GEREKÇESİ:
+--------------------------------------------------
+• İade Eden Yetkili: ${reviewerName}
+• İade / Düzeltme Notu: ${returnNote}
+• Gezi Mekânı: ${plan.destinationName}
+• Gezi Tarihi: ${plan.tripDate}
+
+Lütfen gezi portalına e-posta adresinizle giriş yaparak planınızı belirtilen hususlar doğrultusunda güncelleyip tekrar onaya gönderiniz.
+
+Bilgilerinize sunulur.
+${plan.schoolName} Müdürlüğü`;
+
+  const body = encodeURIComponent(bodyContent);
+  const toEmails = [teacherEmail, schoolEmail].filter(Boolean).join(',');
+  const mailtoUrl = `mailto:${toEmails}?subject=${subject}&body=${body}`;
+
+  try {
+    const link = document.createElement('a');
+    link.href = mailtoUrl;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (e) {
+    console.warn('Mailto açılamadı:', e);
+  }
+}
+
+/**
  * Veritabanı Yöneticisi (LocalStorage + GitHub Database Sync + Kademeli Onay)
  */
 export const DatabaseService = {

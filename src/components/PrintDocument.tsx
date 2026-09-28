@@ -65,6 +65,9 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
             <strong className="underline"> {data.departureTime || '....:....'} - {data.returnTime || '....:....'}</strong> saatleri arasında 
             <strong className="underline"> {data.destinationName || '................................'}</strong> ({data.destinationAddress || data.selectedCity}) adresine 
             <strong className="underline"> {data.tripType}</strong> gezi düzenlenmesi planlanmaktadır.
+            {data.transportationType === 'Belediye / Toplu Taşıma' && (
+              <span> Gezi için ilgili Belediye Başkanlığı üzerinden araç tahsisi ve ulaşım desteği talebinde bulunulmuştur.</span>
+            )}
             <br />
             Söz konusu geziye ait Okul Gezi Planı, Kafile ve Görevli Listesi, Ulaşım Bilgileri ile Zaman Akış Çizelgesi ekte sunulmuştur. 
             Gezinin MEB Eğitim Kurumları Sosyal Etkinlikler Yönetmeliği hükümleri doğrultusunda yapılması hususunu olurlarınıza arz ederim.
@@ -221,13 +224,21 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
                   <>
                     <tr className="border-b border-black">
                       <td className="w-1/4 p-1 font-bold border-r border-black bg-gray-50">Ulaşım Türü / Şekli</td>
-                      <td className="w-1/4 p-1 border-r border-black">{data.transportationType}</td>
+                      <td className="w-1/4 p-1 border-r border-black font-semibold">{data.transportationType}</td>
                       <td className="w-1/4 p-1 font-bold border-r border-black bg-gray-50">Araç Plakası / Firma</td>
-                      <td className="w-1/4 p-1 font-semibold">{data.vehiclePlate || '-'} ({data.transportCompany || 'Firma Belirtilmedi'})</td>
+                      <td className="w-1/4 p-1 font-semibold">
+                        {data.transportationType === 'Belediye / Toplu Taşıma' 
+                          ? `Belediye Araç Talepli (${data.vehiclePlate || 'Tahsisli Araç'})` 
+                          : `${data.vehiclePlate || '-'} (${data.transportCompany || 'Firma Belirtilmedi'})`}
+                      </td>
                     </tr>
                     <tr className="border-b border-black">
                       <td className="p-1 font-bold border-r border-black bg-gray-50">Sürücü Adı & Tel</td>
-                      <td className="p-1 border-r border-black">{data.driverName || '-'} / {data.driverPhone || '-'}</td>
+                      <td className="p-1 border-r border-black">
+                        {data.transportationType === 'Belediye / Toplu Taşıma' && !data.driverName
+                          ? 'Belediye Görevli Sürücüsü'
+                          : `${data.driverName || '-'} / ${data.driverPhone || '-'}`}
+                      </td>
                       <td className="p-1 font-bold border-r border-black bg-gray-50">Hareket / Dönüş Yeri</td>
                       <td className="p-1">{data.departureLocation} - {data.returnLocation}</td>
                     </tr>

@@ -7,28 +7,52 @@ import { SavedPlansModal } from './components/SavedPlansModal';
 import { ApprovalModal } from './components/ApprovalModal';
 import { AdminApprovalPanel } from './components/AdminApprovalPanel';
 import { GitHubSyncModal } from './components/GitHubSyncModal';
-import type { GeziPlanData, UserRole } from './types';
+import { AuthLoginScreen } from './components/AuthLoginScreen';
+import type { GeziPlanData, UserRole, AuthUser } from './types';
 import { INITIAL_EMPTY_PLAN, SAMPLE_POPULATED_PLAN } from './data/locations';
-import { DatabaseService, sendPlanNotificationEmails, DEFAULT_SCHOOL_EMAIL } from './services/db';
+import { 
+  DatabaseService, 
+  sendPlanNotificationEmails, 
+  sendApprovalStatusEmail, 
+  sendReturnStatusEmail, 
+  DEFAULT_SCHOOL_EMAIL 
+} from './services/db';
 import { Eye, EyeOff, CheckCircle2, AlertCircle, Sparkles, GraduationCap, Building2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+const AUTH_STORAGE_KEY = 'odos_gezi_plani_auth_user_v1';
+
 export function App() {
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
   // Her açılışta ve onay sonrası YENİ BOŞ EKRAN oluşturucu
-  const createNewPlanObject = (): GeziPlanData => ({
+  const createNewPlanObject = (user?: AuthUser | null): GeziPlanData => ({
     ...INITIAL_EMPTY_PLAN,
     id: 'gezi-' + Date.now(),
     documentNumber: '',
     principalName: 'Recep KIZILIRMAK',
     deputyPrincipalName: 'Fudan FİDAN',
     schoolEmail: DEFAULT_SCHOOL_EMAIL,
+    teacherEmail: user?.email || '',
+    headTeacher: {
+      ...INITIAL_EMPTY_PLAN.headTeacher,
+      fullName: user?.role === 'ogretmen' ? user.fullName : ''
+    },
     status: 'taslak',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
 
-  const [userRole, setUserRole] = useState<UserRole>('ogretmen');
-  const [currentPlan, setCurrentPlan] = useState<GeziPlanData>(createNewPlanObject());
+  const [userRole, setUserRole] = useState<UserRole>(currentUser?.role || 'ogretmen');
+  const [currentPlan, setCurrentPlan] = useState<GeziPlanData>(createNewPlanObject(currentUser));
   const [savedPlans, setSavedPlans] = useState<GeziPlanData[]>([]);
   
   // Modals
@@ -55,6 +79,24 @@ export function App() {
     }, 4500);
   };
 
+  // Login handler
+  const handleLogin = (user: AuthUser) => {
+    setCurrentUser(user);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    setUserRole(user.role);
+    setCurrentPlan(createNewPlanObject(user));
+    showToast(`Hoş geldiniz, ${user.fullName} (${user.title || ''})`, 'success');
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    if (window.confirm('Oturumu kapatmak istediğinize emin misiniz?')) {
+      setCurrentUser(null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      showToast('Oturum kapatıldı.', 'info');
+    }
+  };
+
   // Form field update
   const handleFormChange = (updated: Partial<GeziPlanData>) => {
     setCurrentPlan(prev => ({
@@ -67,7 +109,7 @@ export function App() {
   // New Blank Form
   const handleNewPlan = () => {
     if (window.confirm('Yeni bir boş gezi planı oluşturmak istediğinize emin misiniz?')) {
-      setCurrentPlan(createNewPlanObject());
+      setCurrentPlan(createNewPlanObject(currentUser));
       setUserRole('ogretmen');
       showToast('Yeni boş gezi planı formu açıldı.', 'info');
     }
@@ -82,6 +124,7 @@ export function App() {
       principalName: 'Recep KIZILIRMAK',
       deputyPrincipalName: 'Fudan FİDAN',
       schoolEmail: DEFAULT_SCHOOL_EMAIL,
+      teacherEmail: currentUser?.email || 'ogretmen@meb.k12.tr',
       status: 'taslak',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -97,6 +140,7 @@ export function App() {
   const handleSaveDraft = () => {
     const res = DatabaseService.savePlan({
       ...currentPlan,
+      teacherEmail: currentPlan.teacherEmail || currentUser?.email || '',
       status: currentPlan.status || 'taslak'
     });
     if (res.success) {
@@ -130,7 +174,7 @@ export function App() {
       ...currentPlan,
       status: 'memur_incelemesinde', // 1. Aşama Memur Ön İncelemesine gider
       submittedBy: teacherName,
-      teacherEmail: teacherEmail,
+      teacherEmail: teacherEmail || currentUser?.email || '',
       schoolEmail: schoolEmail || DEFAULT_SCHOOL_EMAIL,
       approvalNotes: teacherNotes ? `Öğretmen Notu: ${teacherNotes}` : undefined,
       headTeacher: {
@@ -156,7 +200,7 @@ export function App() {
       showToast(`"${planToSubmit.destinationName}" planı Memur Ön İncelemesine sunuldu ve ${schoolEmail || DEFAULT_SCHOOL_EMAIL} adresine e-posta bildirimi hazırlandı.`, 'success');
       
       // Kullanıcının istediği gibi EKRAN YENİ BOŞ KAYIT EKRANINA DÖNSÜN:
-      setCurrentPlan(createNewPlanObject());
+      setCurrentPlan(createNewPlanObject(currentUser));
     } else {
       showToast('Plan onay veritabanına gönderilirken bir hata oluştu.', 'error');
     }
@@ -170,21 +214,30 @@ export function App() {
     notes?: string
   ) => {
     const res = DatabaseService.advanceStage(planId, currentRole, reviewerName, notes);
-    if (res.success) {
+    if (res.success && res.data) {
       refreshPlans();
+
+      // Onay E-posta Bildirimini Gönder
+      const isFinal = currentRole === 'okul_muduru';
+      sendApprovalStatusEmail(res.data, res.nextStageName, reviewerName, isFinal);
+
       try {
         confetti({ particleCount: 60, spread: 60 });
       } catch (_) {}
-      showToast(`İşlem Başarılı: Plan "${res.nextStageName}" aşamasına aktarıldı.`, 'success');
+      showToast(`İşlem Başarılı: Plan "${res.nextStageName}" aşamasına aktarıldı ve e-posta bildirimi hazırlandı.`, 'success');
     }
   };
 
-  // Admin: Reject / Request revision
+  // Admin: Reject / Request revision (İade)
   const handleRejectPlan = (planId: string, rejectedBy: string, notes: string) => {
     const res = DatabaseService.rejectPlan(planId, rejectedBy, notes);
-    if (res.success) {
+    if (res.success && res.data) {
       refreshPlans();
-      showToast('Düzeltme talebi kaydedildi.', 'info');
+
+      // İade E-posta Bildirimini Gönder
+      sendReturnStatusEmail(res.data, rejectedBy, notes);
+
+      showToast('Düzeltme talebi (iade) kaydedildi ve öğretmene e-posta bildirimi hazırlandı.', 'info');
     }
   };
 
@@ -256,6 +309,11 @@ export function App() {
     p.status === 'mudur_onayinda'
   ).length;
 
+  // EĞER KULLANICI GİRİŞ YAPMAMIŞSA GİRİŞ EKRANINI GÖSTER
+  if (!currentUser) {
+    return <AuthLoginScreen onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col selection:bg-red-500 selection:text-white font-sans antialiased">
       
@@ -272,7 +330,9 @@ export function App() {
       {/* Header Bar */}
       <Header
         userRole={userRole}
+        currentUser={currentUser}
         onRoleChange={setUserRole}
+        onLogout={handleLogout}
         onNewPlan={handleNewPlan}
         onPrint={handlePrint}
         onSave={handleSaveDraft}
@@ -390,7 +450,9 @@ export function App() {
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         savedPlans={savedPlans}
+        currentUser={currentUser}
         onLoadPlan={handleLoadPlan}
+        onPrintPlan={handlePrintPlan}
         onDeletePlan={handleDeletePlan}
         onExportJSON={handleExportJSON}
         onImportJSON={handleImportJSON}

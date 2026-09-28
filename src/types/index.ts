@@ -8,6 +8,13 @@ export type PlanStatus =
   | 'onaylandi' 
   | 'reddedildi';
 
+export interface AuthUser {
+  email: string;
+  fullName: string;
+  role: UserRole;
+  title?: string;
+}
+
 export interface GradeStudentRow {
   id: string;
   gradeName: string; // Örn: '3-A', 'Anasınıfı-B', '4-C'
@@ -113,7 +120,7 @@ export interface GeziPlanData {
   returnTime: string;
   departureLocation: string;
   returnLocation: string;
-  transportationType: 'Okul Servis Aracı' | 'Özel Turizm Otobüsü' | 'Belediye / Toplu Taşıma' | 'Yürüyerek' | 'Diğer';
+  transportationType: 'Okul Servis Aracı' | 'Özel Turizm Otobüsü' | 'Belediye / Toplu Taşıma' | 'Yürüyerek';
   vehiclePlate: string;
   driverName: string;
   driverPhone: string;

@@ -1286,13 +1286,12 @@ export const GeziForm: React.FC<GeziFormProps> = ({
             <select
               value={data.transportationType}
               onChange={(e) => onChange({ transportationType: e.target.value as any })}
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-amber-500 outline-none font-semibold text-slate-800"
             >
               <option value="Özel Turizm Otobüsü">Özel Turizm Otobüsü (D2 Yetki Belgeli)</option>
               <option value="Okul Servis Aracı">Okul Servis Aracı</option>
-              <option value="Belediye / Toplu Taşıma">Belediye / Toplu Taşıma</option>
-              <option value="Yürüyerek">Yürüyerek (Yakın Çevre)</option>
-              <option value="Diğer">Diğer</option>
+              <option value="Belediye / Toplu Taşıma">Belediye / Toplu Taşıma (Belediye Araç Talepli)</option>
+              <option value="Yürüyerek">Yürüyerek (Yakın Çevre / Araçsız)</option>
             </select>
           </div>
 
@@ -1321,6 +1320,15 @@ export const GeziForm: React.FC<GeziFormProps> = ({
               className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 outline-none"
             />
           </div>
+
+          {data.transportationType === 'Belediye / Toplu Taşıma' && (
+            <div className="sm:col-span-2 lg:col-span-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2.5 text-xs text-blue-900">
+              <Bus className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>
+                <strong>Belediye Ulaşım Desteği:</strong> Resmi dilekçeye ve plana <em>"Gezi için ilgili Belediye Başkanlığından araç tahsisi ve ulaşım desteği talebinde bulunulmuştur."</em> resmi ibaresi otomatik olarak eklenecektir.
+              </span>
+            </div>
+          )}
 
           {data.transportationType === 'Yürüyerek' ? (
             <div className="sm:col-span-2 lg:col-span-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center gap-3">

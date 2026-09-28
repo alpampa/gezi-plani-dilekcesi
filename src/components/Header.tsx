@@ -8,13 +8,19 @@ import {
   School, 
   GraduationCap, 
   Building2, 
-  Database 
+  Database,
+  LogOut,
+  User,
+  UserCheck,
+  Award
 } from 'lucide-react';
-import type { UserRole } from '../types';
+import type { UserRole, AuthUser } from '../types';
 
 interface HeaderProps {
   userRole: UserRole;
+  currentUser: AuthUser | null;
   onRoleChange: (role: UserRole) => void;
+  onLogout: () => void;
   onNewPlan: () => void;
   onPrint: () => void;
   onSave: () => void;
@@ -27,7 +33,9 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   userRole,
+  currentUser,
   onRoleChange,
+  onLogout,
   onNewPlan,
   onPrint,
   onSave,
@@ -55,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
                   MEB & EBA ODOS Uyumlu
                 </span>
                 <span className="hidden md:inline-block text-xs font-medium text-slate-500">
-                  Türkiye Yüzyılı Maarif Modeli
+                  Zeynep Kamil İlkokulu
                 </span>
               </div>
               <h1 className="text-sm sm:text-base lg:text-lg font-black tracking-tight text-slate-900 truncate">
@@ -64,38 +72,72 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Role Switcher in Header */}
-          <div className="hidden md:flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => onRoleChange('ogretmen')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                userRole === 'ogretmen'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <GraduationCap className="w-4 h-4 text-rose-600" />
-              <span>Öğretmen Girişi</span>
-            </button>
+          {/* User Profile & Role Switcher in Header */}
+          <div className="hidden lg:flex items-center gap-2">
+            
+            {/* Logged in User Badge */}
+            {currentUser && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+                <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center font-bold text-slate-700 shadow-xs">
+                  {currentUser.role === 'ogretmen' ? <GraduationCap className="w-4 h-4 text-red-600" /> :
+                   currentUser.role === 'memur' ? <UserCheck className="w-4 h-4 text-amber-600" /> :
+                   currentUser.role === 'mudur_yardimcisi' ? <Building2 className="w-4 h-4 text-indigo-600" /> :
+                   <Award className="w-4 h-4 text-red-700" />}
+                </div>
+                <div className="min-w-0">
+                  <span className="font-bold text-slate-900 block truncate max-w-[140px]">
+                    {currentUser.fullName}
+                  </span>
+                  <span className="text-[10px] text-slate-500 block truncate max-w-[140px]">
+                    {currentUser.email}
+                  </span>
+                </div>
 
-            <button
-              type="button"
-              onClick={() => onRoleChange('okul_idaresi')}
-              className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                userRole === 'okul_idaresi'
-                  ? 'bg-white text-indigo-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Building2 className="w-4 h-4 text-indigo-600" />
-              <span>Okul İdaresi</span>
-              {pendingCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="p-1 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition ml-1 cursor-pointer"
+                  title="Hesaptan Çıkış Yap / Profil Değiştir"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Quick Role Switcher */}
+            <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => onRoleChange('ogretmen')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                  userRole === 'ogretmen'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <GraduationCap className="w-4 h-4 text-rose-600" />
+                <span>Öğretmen</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onRoleChange('okul_idaresi')}
+                className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                  userRole === 'okul_idaresi'
+                    ? 'bg-white text-indigo-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Building2 className="w-4 h-4 text-indigo-600" />
+                <span>İdare Onay Masası</span>
+                {pendingCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
           </div>
 
           {/* Action Buttons */}
@@ -120,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
               title="Örnek Veri ile Doldur"
             >
               <Sparkles className="w-4 h-4 text-amber-600" />
-              <span className="hidden sm:inline">Örnek Doldur</span>
+              <span className="hidden sm:inline">Örnek</span>
             </button>
 
             {/* GitHub Sync Button */}
@@ -174,33 +216,33 @@ export const Header: React.FC<HeaderProps> = ({
 
         </div>
 
-        {/* Mobile Role Switcher Bar */}
-        <div className="md:hidden flex items-center justify-center p-1.5 bg-slate-100 rounded-xl border border-slate-200 mb-2">
-          <button
-            type="button"
-            onClick={() => onRoleChange('ogretmen')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-              userRole === 'ogretmen'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600'
-            }`}
-          >
-            <GraduationCap className="w-4 h-4 text-rose-600" />
-            <span>Öğretmen Girişi</span>
-          </button>
+        {/* Mobile Subheader Bar */}
+        <div className="lg:hidden flex items-center justify-between p-2 bg-slate-100 rounded-xl border border-slate-200 mb-2 gap-2">
+          {currentUser && (
+            <div className="flex items-center gap-1.5 text-xs truncate">
+              <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <span className="font-bold text-slate-900 truncate">{currentUser.fullName}</span>
+              <span className="text-[10px] text-slate-500">({currentUser.email})</span>
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={() => onRoleChange('okul_idaresi')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-              userRole === 'okul_idaresi'
-                ? 'bg-white text-indigo-900 shadow-xs'
-                : 'text-slate-600'
-            }`}
-          >
-            <Building2 className="w-4 h-4 text-indigo-600" />
-            <span>Okul İdaresi ({pendingCount} Onay)</span>
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => onRoleChange(userRole === 'ogretmen' ? 'okul_idaresi' : 'ogretmen')}
+              className="px-2.5 py-1 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-xs cursor-pointer"
+            >
+              {userRole === 'ogretmen' ? 'İdareye Geç' : 'Öğretmene Geç'}
+            </button>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="p-1 text-slate-500 hover:text-red-600 cursor-pointer"
+              title="Çıkış Yap"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
       </div>
