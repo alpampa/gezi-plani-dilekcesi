@@ -127,10 +127,10 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
         </table>
       </div>
 
-      {/* TABLO 2: EĞİTSEL AMAÇ VE KAZANIMLAR */}
+      {/* TABLO 2: EĞİTSEL AMAÇ VE ÖĞRENME ÇIKTILARI / KAZANIMLAR */}
       <div className="border border-black mb-3 text-xs page-break-inside-avoid">
         <div className="bg-gray-100 font-bold px-2 py-1 border-b border-black text-[11px] uppercase">
-          2. Eğitsel Amaç, Konu ve Maarif Modeli Kazanımları
+          2. Eğitsel Amaç, Konu ve Öğretim Programı / Maarif Modeli Öğrenme Çıktıları / Kazanımları
         </div>
         <table className="w-full border-collapse">
           <tbody>
@@ -145,7 +145,7 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({ data }) => {
               <td colSpan={3} className="p-1.5">{data.purpose}</td>
             </tr>
             <tr>
-              <td className="p-1.5 font-bold border-r border-black bg-gray-50">Öğretim Programı Kazanımları</td>
+              <td className="p-1.5 font-bold border-r border-black bg-gray-50">Öğrenme Çıktıları / Kazanımları</td>
               <td colSpan={3} className="p-1.5 whitespace-pre-line font-mono text-[11px]">{data.outcomes}</td>
             </tr>
           </tbody>

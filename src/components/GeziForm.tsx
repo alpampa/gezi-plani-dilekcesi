@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Building, 
   MapPin, 
@@ -11,10 +11,14 @@ import {
   Edit3, 
   ShieldCheck, 
   FileCheck2,
-  CheckCircle2
+  CheckCircle2,
+  BookOpen,
+  PlusCircle,
+  Sparkles
 } from 'lucide-react';
 import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem } from '../types';
 import { TURKISH_CITIES, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
+import { CURRICULUM_DATA } from '../data/curriculum';
 
 interface GeziFormProps {
   data: GeziPlanData;
@@ -23,6 +27,43 @@ interface GeziFormProps {
 }
 
 export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) => {
+  // Curriculum selector state
+  const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-1');
+  const [selectedLessonName, setSelectedLessonName] = useState<string>('Hayat Bilgisi (Maarif Modeli)');
+
+  const currentGradeData = CURRICULUM_DATA.find(g => g.id === selectedGradeId) || CURRICULUM_DATA[0];
+  const currentLessons = currentGradeData.lessons;
+  const currentLesson = currentLessons.find(l => l.name === selectedLessonName) || currentLessons[0];
+
+  // When grade changes, adjust default lesson
+  const handleGradeChange = (gradeId: string) => {
+    setSelectedGradeId(gradeId);
+    const newGrade = CURRICULUM_DATA.find(g => g.id === gradeId);
+    if (newGrade && newGrade.lessons.length > 0) {
+      setSelectedLessonName(newGrade.lessons[0].name);
+    }
+  };
+
+  // Add single outcome to textarea
+  const handleAddOutcome = (outcomeText: string) => {
+    const existing = data.outcomes ? data.outcomes.trim() : '';
+    if (existing.includes(outcomeText)) return; // already added
+    const updated = existing ? `${existing}\n${outcomeText}` : outcomeText;
+    onChange({ outcomes: updated });
+  };
+
+  // Add all outcomes of current lesson topic
+  const handleAddAllTopicOutcomes = (topicOutcomes: { text: string }[]) => {
+    const existing = data.outcomes ? data.outcomes.trim() : '';
+    let updated = existing;
+    topicOutcomes.forEach(item => {
+      if (!updated.includes(item.text)) {
+        updated = updated ? `${updated}\n${item.text}` : item.text;
+      }
+    });
+    onChange({ outcomes: updated });
+  };
+
   // Filtered preset locations based on city and category
   const filteredLocations = PRESET_LOCATIONS.filter(loc => {
     const cityMatch = !data.selectedCity || loc.city === data.selectedCity;
@@ -447,7 +488,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
         </div>
       </section>
 
-      {/* 3. EĞİTİM, KAZANIMLAR VE MAARİF MODELİ BİLGİLERİ */}
+      {/* 3. EĞİTİM, KAZANIMLAR VE MAARİF MODELİ BİLGİLERİ (GELİŞMİŞ KAZANIM SEÇİCİ) */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 shadow-xs border border-slate-200">
         <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
           <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -455,15 +496,15 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900">
-              3. Eğitim Programı, Gezinin Amacı ve İlgili Kazanımlar
+              3. Eğitim Programı, Gezinin Amacı ve Öğrenme Çıktıları / Kazanımları
             </h2>
             <p className="text-xs sm:text-sm text-slate-500">
-              Türkiye Yüzyılı Maarif Modeli ve MEB Müfredatına uygun ders/kazanım eşleştirmesi
+              Türkiye Yüzyılı Maarif Modeli (Okul Öncesi, 1, 2, 3. Sınıf) ve MEB Öğretim Programı (4. Sınıf) ders ve konu bazlı kazanım seçimi
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               İlgili Ders / Alan <span className="text-red-500">*</span>
@@ -491,32 +532,174 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Gezinin Amacı ve Gerekçesi <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              rows={2}
-              value={data.purpose}
-              onChange={(e) => onChange({ purpose: e.target.value })}
-              placeholder="Öğrencilerin okul dışı öğrenme ortamlarında yerinde gözlem yaparak inceleme becerilerini geliştirmeleri..."
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-            />
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Gezinin Amacı ve Gerekçesi <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            rows={2}
+            value={data.purpose}
+            onChange={(e) => onChange({ purpose: e.target.value })}
+            placeholder="Öğrencilerin okul dışı öğrenme ortamlarında yerinde gözlem yaparak inceleme becerilerini geliştirmeleri..."
+            className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+          />
+        </div>
+
+        {/* KAZANIM / ÖĞRENME ÇIKTISI SEÇİM KUTUSU (HİYERARŞİK MENÜ) */}
+        <div className="bg-gradient-to-br from-indigo-50/70 via-slate-50 to-blue-50/50 rounded-xl border border-indigo-200 p-4 sm:p-5 mb-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-indigo-600" />
+              <span className="text-xs sm:text-sm font-bold text-indigo-950">
+                Öğretim Programı & Maarif Modeli Açılır Menüden Kazanım Seçici
+              </span>
+            </div>
+            <span className="text-[11px] font-semibold text-indigo-700 px-2 py-0.5 rounded-md bg-indigo-100/70">
+              {currentGradeData.modelType}
+            </span>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Öğretim Programı / Maarif Modeli İlgili Kazanımları (Her satıra bir kazanım)
-            </label>
-            <textarea
-              rows={3}
-              value={data.outcomes}
-              onChange={(e) => onChange({ outcomes: e.target.value })}
-              placeholder="FB.3.4. Geçmişte ve günümüzde kullanılan teknolojik ürünleri karşılaştırır.&#10;SB.3.2. Çevresindeki tarihi ve kültürel mekânların önemini kavrar."
-              className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-mono text-xs"
-            />
+          {/* Sınıf / Kademe ve Ders Seçimi Dropdownları */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            
+            {/* 1. Sınıf Seçimi */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                1. Sınıf Düzeyi Seçiniz:
+              </label>
+              <select
+                value={selectedGradeId}
+                onChange={(e) => handleGradeChange(e.target.value)}
+                className="w-full px-3 py-2 text-sm font-semibold rounded-lg border border-indigo-300 bg-white text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+              >
+                {CURRICULUM_DATA.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.grade} {item.id === 'grade-4' ? '(Eski / Mevcut Program)' : '(Maarif Modeli)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. Ders Seçimi */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                2. İlgili Dersi Seçiniz:
+              </label>
+              <select
+                value={selectedLessonName}
+                onChange={(e) => setSelectedLessonName(e.target.value)}
+                className="w-full px-3 py-2 text-sm font-semibold rounded-lg border border-indigo-300 bg-white text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+              >
+                {currentLessons.map((l) => (
+                  <option key={l.name} value={l.name}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Hızlı Ders Adını Forma Aktar Butonu */}
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange({ courseName: selectedLessonName });
+                }}
+                className="w-full px-3 py-2 text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-50 border border-indigo-300 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Bu Dersi Form Alanına Yaz</span>
+              </button>
+            </div>
+
           </div>
+
+          {/* Konu ve Kazanımlar Listesi */}
+          <div className="space-y-3 pt-2">
+            <span className="text-xs font-bold text-slate-700 block">
+              3. Konu Bazlı Öğrenme Çıktıları / Kazanımlar (Tek tıkla forma ekleyin):
+            </span>
+
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              {currentLesson.topics.map((topic, tIdx) => (
+                <div key={tIdx} className="bg-white rounded-lg p-3 border border-indigo-100 shadow-xs">
+                  <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-800">
+                      📖 {topic.title}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleAddAllTopicOutcomes(topic.outcomes)}
+                      className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                      <span>Bu Konudaki Tümünü Ekle</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {topic.outcomes.map((out) => {
+                      const isAlreadyAdded = data.outcomes?.includes(out.text);
+                      return (
+                        <div
+                          key={out.code}
+                          className={`p-2 rounded-md text-xs flex items-start justify-between gap-2 transition ${
+                            isAlreadyAdded 
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                              : 'bg-slate-50 hover:bg-indigo-50/70 text-slate-700 border border-slate-200/80'
+                          }`}
+                        >
+                          <span className="font-mono text-[11px] leading-relaxed flex-1">
+                            {out.text}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleAddOutcome(out.text)}
+                            disabled={isAlreadyAdded}
+                            className={`px-2.5 py-1 text-[11px] font-bold rounded shrink-0 transition cursor-pointer ${
+                              isAlreadyAdded
+                                ? 'bg-emerald-200/60 text-emerald-800 cursor-default'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                            }`}
+                          >
+                            {isAlreadyAdded ? '✓ Eklendi' : '+ Ekle'}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* METİN ALANI (HER SATIRA BİR KAZANIM) */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-bold text-slate-800">
+              Öğretim Programı / Maarif Modeli İlgili Öğrenme Çıktıları / Kazanımları (Her satıra bir kazanım) <span className="text-red-500">*</span>
+            </label>
+            {data.outcomes && (
+              <button
+                type="button"
+                onClick={() => onChange({ outcomes: '' })}
+                className="text-[11px] text-rose-600 hover:underline font-semibold cursor-pointer"
+              >
+                Kazanımları Temizle
+              </button>
+            )}
+          </div>
+          <textarea
+            rows={4}
+            value={data.outcomes}
+            onChange={(e) => onChange({ outcomes: e.target.value })}
+            placeholder="Yukarıdaki menüden seçebilir veya elle her satıra bir kazanım/öğrenme çıktısı yazabilirsiniz..."
+            className="w-full px-3.5 py-2.5 text-xs font-mono rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition leading-relaxed bg-white"
+          />
+          <span className="text-[11px] text-slate-400 mt-1 block">
+            * Yukarıdaki menüden ekleme yapabilir ya da bu alana serbestçe ekleme/çıkarma yapabilirsiniz.
+          </span>
         </div>
       </section>
 
@@ -545,7 +728,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({ data, onChange, onPrint }) =
               type="text"
               value={data.targetGrades}
               onChange={(e) => onChange({ targetGrades: e.target.value })}
-              placeholder="Örn: 3-A, 3-B, 3-C Şubeleri"
+              placeholder="Örn: 3-A, 3-B, 3-C Şubeleri veya Anasınıfı A Şubesi"
               className="w-full px-3.5 py-2 text-sm font-semibold rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition"
             />
           </div>
