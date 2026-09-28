@@ -18,6 +18,7 @@ import {
   sendReturnStatusEmail, 
   DEFAULT_SCHOOL_EMAIL 
 } from './services/db';
+import { EmailEngine } from './services/emailEngine';
 import { generateAndDownloadPlanPDF } from './services/pdf';
 import { Eye, EyeOff, CheckCircle2, AlertCircle, Sparkles, GraduationCap, Building2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -223,12 +224,24 @@ export function App() {
 
       // Onay E-posta Bildirimini Gönder
       const isFinal = currentRole === 'okul_muduru';
-      sendApprovalStatusEmail(res.data, res.nextStageName, reviewerName, isFinal);
+      
+      if (isFinal) {
+        // Doğrudan E-Posta Motorunu Tetikle (Öğretmen + Okul İdaresi)
+        EmailEngine.sendPrincipalApprovalNotification(res.data, reviewerName, notes).then(emailRes => {
+          if (emailRes.success) {
+            showToast(`📧 E-Posta Motoru: Onay bildirimi ve resmi gezi raporu doğrudan ${res.data?.teacherEmail || ''} ve ${DEFAULT_SCHOOL_EMAIL} adreslerine iletildi!`, 'success');
+          }
+        }).catch(err => {
+          console.warn('Otomatik e-posta motoru gönderim uyarısı:', err);
+        });
+      } else {
+        sendApprovalStatusEmail(res.data, res.nextStageName, reviewerName, false);
+      }
 
       try {
-        confetti({ particleCount: 60, spread: 60 });
+        confetti({ particleCount: 70, spread: 70, origin: { y: 0.4 } });
       } catch (_) {}
-      showToast(`İşlem Başarılı: Plan "${res.nextStageName}" aşamasına aktarıldı ve e-posta bildirimi hazırlandı.`, 'success');
+      showToast(`İşlem Başarılı: Plan "${res.nextStageName}" aşamasına aktarıldı.`, 'success');
     }
   };
 

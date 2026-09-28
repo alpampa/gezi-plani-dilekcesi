@@ -4,6 +4,7 @@ import { checkTripDeadlineRule, DatabaseService } from '../services/db';
 import { generateAndDownloadPlanPDF } from '../services/pdf';
 import { CATEGORIES, ISTANBUL_DISTRICTS } from '../data/locations';
 import { PostTripEvaluationModal } from './PostTripEvaluationModal';
+import { EmailEngineModal } from './EmailEngineModal';
 import { 
   Building2, 
   CheckCircle2, 
@@ -34,7 +35,8 @@ import {
   AlertTriangle,
   RotateCcw,
   SlidersHorizontal,
-  Star
+  Star,
+  Zap
 } from 'lucide-react';
 
 interface AdminApprovalPanelProps {
@@ -95,6 +97,9 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
 
   // Değerlendirme Modalı
   const [evaluatingPlan, setEvaluatingPlan] = useState<GeziPlanData | null>(null);
+
+  // E-Posta Motoru Modalı
+  const [isEmailEngineOpen, setIsEmailEngineOpen] = useState(false);
 
   // Detaylı İnceleme Modalı (Üzerine tıklayınca açılan)
   const [inspectingPlan, setInspectingPlan] = useState<GeziPlanData | null>(null);
@@ -279,6 +284,17 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             >
               <BarChart3 className="w-4 h-4" />
               <span>{viewMode === 'analytics' ? 'Onay Listesine Dön' : '📊 Yıl & Tarih Bazlı Raporlama Masası'}</span>
+            </button>
+
+            {/* E-Posta Motoru Butonu */}
+            <button
+              type="button"
+              onClick={() => setIsEmailEngineOpen(true)}
+              className="px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="Otomatik E-Posta Motoru Ayarları, Test ve Gönderim Günlüğü"
+            >
+              <Zap className="w-4 h-4 text-amber-300" />
+              <span>E-Posta Motoru</span>
             </button>
 
             {/* CSV Dışa Aktar */}
@@ -1628,6 +1644,17 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             setEvaluatingPlan(null);
           }}
           readOnly={true}
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* ================ OTOMATİK E-POSTA MOTORU MODALI ========================= */}
+      {/* ========================================================================= */}
+      {isEmailEngineOpen && (
+        <EmailEngineModal
+          isOpen={isEmailEngineOpen}
+          onClose={() => setIsEmailEngineOpen(false)}
+          samplePlan={plans[0]}
         />
       )}
 
