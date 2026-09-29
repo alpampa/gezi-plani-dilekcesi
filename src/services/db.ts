@@ -291,7 +291,7 @@ export function normalizePlanData(raw: any): GeziPlanData {
       documentDate: new Date().toISOString().split('T')[0],
       documentNumber: '',
       principalName: 'Recep KIZILIRMAK',
-      deputyPrincipalName: 'Fudan FİDAN',
+      deputyPrincipalName: 'Funda FİDAN',
       destinationCategory: 'Tarihi ve Kültürel Mekânlar',
       destinationMode: 'preset',
       selectedCity: 'İstanbul',
@@ -379,7 +379,7 @@ export function normalizePlanData(raw: any): GeziPlanData {
     documentDate: raw.documentDate || raw.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
     documentNumber: raw.documentNumber || '',
     principalName: raw.principalName || 'Recep KIZILIRMAK',
-    deputyPrincipalName: raw.deputyPrincipalName || 'Fudan FİDAN',
+    deputyPrincipalName: raw.deputyPrincipalName || 'Funda FİDAN',
     clerkName: raw.clerkName || '',
     
     destinationCategory: raw.destinationCategory || 'Tarihi ve Kültürel Mekânlar',
@@ -530,7 +530,7 @@ export const DatabaseService = {
 
   /**
    * Kademeli Onay Akışı İlerletme:
-   * 1. Memur İncelemesi -> Müdür Yardımcısı Onayı (Fudan FİDAN)
+   * 1. Memur İncelemesi -> Müdür Yardımcısı Onayı (Funda FİDAN)
    * 2. Müdür Yardımcısı Onayı -> Okul Müdürü Onayı (Recep KIZILIRMAK)
    * 3. Okul Müdürü Onayı -> Onaylandı (Makam Oluru Verildi)
    */
@@ -554,7 +554,7 @@ export const DatabaseService = {
       target.clerkReviewedBy = reviewerName || 'Memur / Evrak Kayıt';
       target.clerkNotes = notes || 'Ön inceleme ve evrak kontrolleri yapılmıştır.';
       target.updatedAt = now;
-      nextStageName = 'Müdür Yardımcısı (Fudan FİDAN) Onayı';
+      nextStageName = 'Müdür Yardımcısı (Funda FİDAN) Onayı';
     } else if (currentRole === 'mudur_yardimcisi') {
       // Eğer memur henüz incelememişse dahi üst makam doğrudan ilerletebilir
       if (!target.clerkReviewedAt) {
@@ -564,7 +564,7 @@ export const DatabaseService = {
       }
       target.status = 'mudur_onayinda';
       target.deputyApprovedAt = now;
-      target.deputyApprovedBy = reviewerName || 'Fudan FİDAN (Müdür Yrd.)';
+      target.deputyApprovedBy = reviewerName || 'Funda FİDAN (Müdür Yrd.)';
       target.deputyNotes = notes || 'Sosyal Etkinlikler Kurulu incelemesi tamamlanmış ve uygun görülmüştür.';
       target.updatedAt = now;
       nextStageName = 'Okul Müdürü (Recep KIZILIRMAK) Makam Oluru';
