@@ -23,6 +23,20 @@ export interface GradeStudentRow {
   totalCount: number;
 }
 
+export interface StudentListItem {
+  id: string;
+  studentNumber?: string; // Okul No
+  fullName: string; // Adı Soyadı
+  grade: string; // Sınıfı/Şubesi (Örn: 3-A)
+  gender?: 'Erkek' | 'Kız';
+  tcNo?: string; // T.C. Kimlik No (isteğe bağlı)
+  parentName?: string; // Veli Adı Soyadı
+  parentPhone?: string; // Veli İletişim Numarası
+  bloodType?: string; // Kan Grubu
+  hasChronicIllness?: string; // Özel Sağlık / Kronik Durumu
+  consentStatus?: 'Alındı' | 'Bekleniyor'; // Ek-1 İzin Durumu
+}
+
 export interface GeziTeacher {
   id: string;
   fullName: string;
@@ -58,12 +72,17 @@ export interface GeziPlanData {
   teacherEmail?: string; // Öğretmenin e-postası
   schoolEmail?: string; // Okul e-postası (Varsayılan: zeynepkamililkokulu@gmail.com)
   
+  // Arşivleme ve Korumalı Silme (Soft-Delete)
+  isArchived?: boolean;
+  archivedAt?: string;
+  archivedBy?: string;
+  
   // Memur İnceleme Bilgileri
   clerkReviewedAt?: string;
   clerkReviewedBy?: string;
   clerkNotes?: string;
   
-  // Müdür Yardımcısı Onay Bilgileri (Fudan FİDAN)
+  // Müdür Yardımcısı Onay Bilgileri (Funda FİDAN)
   deputyApprovedAt?: string;
   deputyApprovedBy?: string;
   deputyNotes?: string;
@@ -86,8 +105,8 @@ export interface GeziPlanData {
   documentDate: string;
   documentNumber: string; // Sayı / Evrak Kayıt No (Varsayılan boş)
   principalName: string; // Varsayılan: Recep KIZILIRMAK
-  deputyPrincipalName: string; // Varsayılan: Fudan FİDAN
-  clerkName?: string; // Memur Adı
+  deputyPrincipalName: string; // Varsayılan: Funda FİDAN
+  clerkName?: string; // Sultan YILDIRIM
   
   // 2. Gezi Mekan & Türü
   destinationCategory: string;
@@ -107,6 +126,9 @@ export interface GeziPlanData {
   totalStudentCount: number;
   totalTeacherCount: number;
   totalCompanionCount: number;
+  
+  // e-Okul Ek-2 Öğrenci İsim Listesi & Ek-1 Veli İzin Muvafakatnameleri
+  studentList?: StudentListItem[];
   
   // 4. Eğitim & Maarif Modeli Kazanım Bilgileri
   courseName: string;

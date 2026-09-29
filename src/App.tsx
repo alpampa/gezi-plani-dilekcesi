@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ChangeEvent } from 'react';
 import { Header } from './components/Header';
 import { GeziForm } from './components/GeziForm';
-import { PrintDocument } from './components/PrintDocument';
+import { PrintDocument, type PrintViewType } from './components/PrintDocument';
 import { SavedPlansModal } from './components/SavedPlansModal';
 import { ApprovalModal } from './components/ApprovalModal';
 import { AdminApprovalPanel } from './components/AdminApprovalPanel';
@@ -63,6 +63,7 @@ export function App() {
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isGitHubSyncOpen, setIsGitHubSyncOpen] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [printViewType, setPrintViewType] = useState<PrintViewType>('official_plan');
   const [evaluatingPlan, setEvaluatingPlan] = useState<GeziPlanData | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
@@ -287,23 +288,48 @@ export function App() {
     showToast(`"${plan.destinationName || 'Seçilen Gezi'}" planı forma aktarıldı.`, 'success');
   };
 
-  // Print specific plan
-  const handlePrintPlan = (plan: GeziPlanData) => {
+  // Print specific plan with specific view type
+  const handlePrintPlanWithView = (plan: GeziPlanData, viewType: PrintViewType = 'official_plan') => {
     setCurrentPlan(plan);
+    setPrintViewType(viewType);
     setTimeout(() => {
       window.print();
     }, 150);
   };
 
+  // Print specific plan (default 2-page official)
+  const handlePrintPlan = (plan: GeziPlanData) => {
+    handlePrintPlanWithView(plan, 'official_plan');
+  };
+
+  // Archive Plan (Soft delete)
+  const handleArchivePlan = (id: string) => {
+    DatabaseService.archivePlan(id, currentUser?.fullName || 'İdare');
+    refreshPlans();
+    showToast('Gezi planı güvenle arşive kaldırıldı.', 'info');
+  };
+
+  // Restore Plan from archive
+  const handleRestorePlan = (id: string) => {
+    DatabaseService.restorePlan(id);
+    refreshPlans();
+    showToast('Gezi planı arşivden aktif listeye geri yüklendi.', 'success');
+  };
+
+  // Permanent Purge (Only principal)
+  const handlePermanentPurgePlan = (id: string) => {
+    const res = DatabaseService.permanentPurgePlan(id, currentUser?.role || '');
+    if (res.success) {
+      refreshPlans();
+      showToast('Gezi planı kalıcı olarak veritabanından silindi.', 'info');
+    } else {
+      showToast(res.error || 'Yetki hatası: Sadece Okul Müdürü kalıcı olarak silebilir.', 'error');
+    }
+  };
+
   // Export JSON backup
   const handleExportJSON = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedPlans, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `MEB_Gezi_Planlari_Veritabani_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    DatabaseService.exportDatabaseJSON();
     showToast('Gezi planları veritabanı yedek dosyası indirildi.', 'success');
   };
 
@@ -314,17 +340,12 @@ export function App() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed)) {
-          localStorage.setItem('odos_gezi_plani_saved_records_v1', JSON.stringify(parsed));
-          refreshPlans();
-          showToast(`${parsed.length} adet gezi planı başarıyla içe aktarıldı.`, 'success');
-        } else {
-          showToast('Geçersiz dosya biçimi.', 'error');
-        }
-      } catch (err) {
-        showToast('JSON dosyası okunurken hata oluştu.', 'error');
+      const res = DatabaseService.importDatabaseJSON(event.target?.result as string);
+      if (res.success) {
+        refreshPlans();
+        showToast(`${res.importedCount} adet gezi planı başarıyla içe aktarıldı.`, 'success');
+      } else {
+        showToast(res.error || 'Yedek yüklenirken bir hata oluştu.', 'error');
       }
     };
     reader.readAsText(file);
@@ -332,13 +353,16 @@ export function App() {
 
   // Print Action
   const handlePrint = () => {
+    setPrintViewType('official_plan');
     window.print();
   };
 
   const pendingCount = savedPlans.filter(p => 
-    p.status === 'memur_incelemesinde' || 
-    p.status === 'mudur_yardimcisi_onayinda' || 
-    p.status === 'mudur_onayinda'
+    !p.isArchived && (
+      p.status === 'memur_incelemesinde' || 
+      p.status === 'mudur_yardimcisi_onayinda' || 
+      p.status === 'mudur_onayinda'
+    )
   ).length;
 
   // EĞER KULLANICI GİRİŞ YAPMAMIŞSA GİRİŞ EKRANINI GÖSTER
@@ -439,9 +463,9 @@ export function App() {
           <div className="no-print mb-8 p-4 sm:p-8 bg-slate-300/70 rounded-2xl border border-slate-300 shadow-inner flex justify-center">
             <div className="bg-white w-full max-w-[210mm] shadow-2xl border border-slate-300 rounded-sm overflow-hidden p-6 sm:p-10">
               <div className="text-[10px] text-slate-400 text-center uppercase tracking-widest border-b border-dashed pb-2 mb-4 font-mono">
-                --- A4 Resmi MEB Baskı Önizleme Alanı (Tam 2 Sayfa) ---
+                --- A4 Resmi MEB Baskı Önizleme Alanı ---
               </div>
-              <PrintDocument data={currentPlan} />
+              <PrintDocument data={currentPlan} viewType={printViewType} />
             </div>
           </div>
         )}
@@ -456,7 +480,12 @@ export function App() {
               onReject={handleRejectPlan}
               onSelectPlan={handleLoadPlan}
               onPrintPlan={handlePrintPlan}
+              onPrintPlanWithView={handlePrintPlanWithView}
+              onArchivePlan={handleArchivePlan}
+              onRestorePlan={handleRestorePlan}
+              onPermanentPurgePlan={handlePermanentPurgePlan}
               onDeletePlan={handleDeletePlan}
+              onRefreshPlans={refreshPlans}
             />
           </div>
         ) : (
@@ -465,6 +494,7 @@ export function App() {
               data={currentPlan}
               onChange={handleFormChange}
               onPrint={handlePrint}
+              onPrintView={(view) => handlePrintPlanWithView(currentPlan, view)}
               onDownloadPDF={() => generateAndDownloadPlanPDF(currentPlan)}
               onSubmitForApproval={handleOpenApprovalModal}
               onSaveDraft={handleSaveDraft}
@@ -475,7 +505,7 @@ export function App() {
 
         {/* Print-Only Document Container (Automatically rendered when Ctrl+P / Yazdır is triggered) */}
         <div className="print-only">
-          <PrintDocument data={currentPlan} />
+          <PrintDocument data={currentPlan} viewType={printViewType} />
         </div>
 
       </main>

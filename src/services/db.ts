@@ -393,11 +393,16 @@ export function normalizePlanData(raw: any): GeziPlanData {
     
     targetGrades: raw.targetGrades || '',
     gradeRows: gradeRowsArr,
+    studentList: Array.isArray(raw.studentList) ? raw.studentList : [],
     maleStudentCount: maleCount,
     femaleStudentCount: femaleCount,
     totalStudentCount: totalCount,
     totalTeacherCount: Number(raw.totalTeacherCount) || (1 + teachersArr.length),
     totalCompanionCount: Number(raw.totalCompanionCount) || companionsArr.length,
+    
+    isArchived: Boolean(raw.isArchived),
+    archivedAt: raw.archivedAt,
+    archivedBy: raw.archivedBy,
     
     courseName: raw.courseName || '',
     subjectTopic: raw.subjectTopic || '',
@@ -507,6 +512,138 @@ export const DatabaseService = {
     } catch (e: any) {
       console.error('Kaydetme hatası:', e);
       return { success: false, data: plan, error: e?.message || 'Kaydetme hatası' };
+    }
+  },
+
+  // Planı Arşive Kaldır (Soft-Delete - Yetkisiz ve kazara silinmeyi önler)
+  archivePlan(id: string, archivedBy?: string): { success: boolean; data?: GeziPlanData } {
+    try {
+      const plans = this.getPlans();
+      const idx = plans.findIndex(p => p.id === id);
+      if (idx === -1) return { success: false };
+
+      const target = {
+        ...plans[idx],
+        isArchived: true,
+        archivedAt: new Date().toISOString(),
+        archivedBy: archivedBy || 'Okul İdaresi',
+        updatedAt: new Date().toISOString()
+      };
+
+      plans[idx] = target;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+      this.syncWithGitHub(plans).catch(err => console.warn('GitHub Sync uyarısı:', err));
+      return { success: true, data: target };
+    } catch (e) {
+      console.error('Arşivleme hatası:', e);
+      return { success: false };
+    }
+  },
+
+  // Arşivlenen Planı Geri Yükle
+  restorePlan(id: string): { success: boolean; data?: GeziPlanData } {
+    try {
+      const plans = this.getPlans();
+      const idx = plans.findIndex(p => p.id === id);
+      if (idx === -1) return { success: false };
+
+      const target = {
+        ...plans[idx],
+        isArchived: false,
+        archivedAt: undefined,
+        archivedBy: undefined,
+        updatedAt: new Date().toISOString()
+      };
+
+      plans[idx] = target;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+      this.syncWithGitHub(plans).catch(err => console.warn('GitHub Sync uyarısı:', err));
+      return { success: true, data: target };
+    } catch (e) {
+      console.error('Geri yükleme hatası:', e);
+      return { success: false };
+    }
+  },
+
+  // Planı Kalıcı Olarak Veritabanından Sil (Sadece Okul Müdürü yetkisinde)
+  permanentPurgePlan(id: string, userRole: string): { success: boolean; error?: string } {
+    if (userRole !== 'okul_muduru' && userRole !== 'okul_idaresi') {
+      return { success: false, error: 'Kalıcı silme işlemi yalnızca Okul Müdürü yetkisindedir.' };
+    }
+    return { success: this.deletePlan(id) };
+  },
+
+  // Öğrenci İsim Listesini (Ek-2) Kaydet
+  saveStudentList(planId: string, studentList: import('../types').StudentListItem[]): { success: boolean; data?: GeziPlanData } {
+    const plans = this.getPlans();
+    const idx = plans.findIndex(p => p.id === planId);
+    if (idx === -1) return { success: false };
+
+    const target = {
+      ...plans[idx],
+      studentList,
+      updatedAt: new Date().toISOString()
+    };
+
+    plans[idx] = target;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+    this.syncWithGitHub(plans).catch(err => console.warn('GitHub Sync uyarısı:', err));
+    return { success: true, data: target };
+  },
+
+  // Veritabanının Tam JSON Yedeğini İndir (Müfettiş & Kalıcı Arşiv)
+  exportDatabaseJSON(): void {
+    const plans = this.getPlans();
+    const exportPayload = {
+      exportedAt: new Date().toISOString(),
+      school: 'Zeynep Kamil İlkokulu',
+      system: 'MEB Okul Dışı Öğrenme Gezi Portalı',
+      totalRecords: plans.length,
+      records: plans
+    };
+    const jsonStr = JSON.stringify(exportPayload, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Zeynep_Kamil_Ilkokulu_Gezi_Veritabani_Yedek_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
+
+  // JSON Yedeğinden Veritabanını Geri Yükle (Restore)
+  importDatabaseJSON(jsonStr: string): { success: boolean; importedCount: number; error?: string } {
+    try {
+      const parsed = JSON.parse(jsonStr);
+      let incomingRecords: any[] = [];
+      if (Array.isArray(parsed)) {
+        incomingRecords = parsed;
+      } else if (parsed && Array.isArray(parsed.records)) {
+        incomingRecords = parsed.records;
+      } else {
+        return { success: false, importedCount: 0, error: 'Geçersiz yedek dosyası formatı.' };
+      }
+
+      const existingPlans = this.getPlans();
+      const existingMap = new Map(existingPlans.map(p => [p.id, p]));
+
+      let count = 0;
+      incomingRecords.forEach(raw => {
+        const norm = normalizePlanData(raw);
+        if (norm && norm.id) {
+          existingMap.set(norm.id, norm);
+          count++;
+        }
+      });
+
+      const mergedList = Array.from(existingMap.values());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedList));
+      this.syncWithGitHub(mergedList).catch(err => console.warn('GitHub Sync uyarısı:', err));
+
+      return { success: true, importedCount: count };
+    } catch (e: any) {
+      return { success: false, importedCount: 0, error: e?.message || 'Yedek yüklenirken hata oluştu.' };
     }
   },
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { GeziPlanData, AuthUser } from '../types';
 import { checkTripDeadlineRule, DatabaseService } from '../services/db';
 import { generateAndDownloadPlanPDF } from '../services/pdf';
@@ -36,8 +36,12 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Star,
-  Zap
+  Zap,
+  Upload,
+  Archive,
+  FolderArchive
 } from 'lucide-react';
+import type { PrintViewType } from './PrintDocument';
 
 interface AdminApprovalPanelProps {
   plans: GeziPlanData[];
@@ -51,7 +55,12 @@ interface AdminApprovalPanelProps {
   onReject: (planId: string, rejectedBy: string, notes: string) => void;
   onSelectPlan: (plan: GeziPlanData) => void;
   onPrintPlan: (plan: GeziPlanData) => void;
+  onPrintPlanWithView?: (plan: GeziPlanData, viewType: PrintViewType) => void;
+  onArchivePlan?: (planId: string) => void;
+  onRestorePlan?: (planId: string) => void;
+  onPermanentPurgePlan?: (planId: string) => void;
   onDeletePlan: (planId: string) => void;
+  onRefreshPlans?: () => void;
 }
 
 export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
@@ -61,7 +70,12 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   onReject,
   onSelectPlan,
   onPrintPlan,
-  onDeletePlan
+  onPrintPlanWithView,
+  onArchivePlan,
+  onRestorePlan,
+  onPermanentPurgePlan,
+  onDeletePlan,
+  onRefreshPlans
 }) => {
   // Aktif İdareci Rolü
   const [activeAdminRole, setActiveAdminRole] = useState<'memur' | 'mudur_yardimcisi' | 'okul_muduru'>(() => {
@@ -81,8 +95,9 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
   const [viewMode, setViewMode] = useState<'list' | 'analytics'>('list');
 
   // Filtreler (Onay Listesi)
-  const [activeTab, setActiveTab] = useState<'all' | 'clerk' | 'deputy' | 'principal' | 'approved' | 'rejected'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'clerk' | 'deputy' | 'principal' | 'approved' | 'rejected' | 'archived'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   // Raporlama ve İstatistik Filtreleri (Yıl, Tarih, Gezi Türü, Ulaşım, Kategori)
   const [reportYear, setReportYear] = useState<string>('all');
@@ -149,12 +164,17 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
 
   // Liste Modu Filtreleme
   const filteredPlans = plans.filter(plan => {
-    // Tab filter
-    if (activeTab === 'clerk' && plan.status !== 'memur_incelemesinde') return false;
-    if (activeTab === 'deputy' && plan.status !== 'mudur_yardimcisi_onayinda') return false;
-    if (activeTab === 'principal' && plan.status !== 'mudur_onayinda') return false;
-    if (activeTab === 'approved' && plan.status !== 'onaylandi') return false;
-    if (activeTab === 'rejected' && plan.status !== 'reddedildi') return false;
+    // Archive vs Active Tab filter
+    if (activeTab === 'archived') {
+      if (!plan.isArchived) return false;
+    } else {
+      if (plan.isArchived) return false;
+      if (activeTab === 'clerk' && plan.status !== 'memur_incelemesinde') return false;
+      if (activeTab === 'deputy' && plan.status !== 'mudur_yardimcisi_onayinda') return false;
+      if (activeTab === 'principal' && plan.status !== 'mudur_onayinda') return false;
+      if (activeTab === 'approved' && plan.status !== 'onaylandi') return false;
+      if (activeTab === 'rejected' && plan.status !== 'reddedildi') return false;
+    }
 
     // Search filter
     if (searchQuery.trim()) {
@@ -302,12 +322,60 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
               type="button"
               onClick={() => DatabaseService.downloadCSVReport(plans, 'MEB_Zeynep_Kamil_Gezi_Raporu')}
               disabled={plans.length === 0}
-              className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              className="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
               title="Tüm Gezi Planlarını Excel / CSV Formatında İndir"
             >
-              <Download className="w-4 h-4" />
-              <span>Tüm Veritabanı CSV</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>CSV Rapor</span>
             </button>
+
+            {/* JSON Tam Yedek İndir */}
+            <button
+              type="button"
+              onClick={() => DatabaseService.exportDatabaseJSON()}
+              disabled={plans.length === 0}
+              className="px-3 py-2 text-xs font-bold text-white bg-slate-700 hover:bg-slate-600 rounded-xl transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              title="Müfettiş ve Kalıcı Arşiv için Tam JSON Veritabanı Yedeği İndir"
+            >
+              <FolderArchive className="w-3.5 h-3.5 text-amber-300" />
+              <span>Yedek Al (JSON)</span>
+            </button>
+
+            {/* JSON Yedeği Geri Yükle */}
+            <button
+              type="button"
+              onClick={() => backupFileInputRef.current?.click()}
+              className="px-3 py-2 text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/20 rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-white/20"
+              title="Önceden indirilmiş JSON yedeğini geri yükle"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Yedek Yükle</span>
+            </button>
+            <input 
+              type="file" 
+              ref={backupFileInputRef} 
+              accept=".json" 
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  const content = event.target?.result as string;
+                  if (content) {
+                    const res = DatabaseService.importDatabaseJSON(content);
+                    if (res.success) {
+                      alert(`${res.importedCount} adet gezi planı başarıyla içe aktarıldı ve senkronize edildi.`);
+                      if (onRefreshPlans) onRefreshPlans();
+                    } else {
+                      alert('Yedek yüklenirken hata: ' + (res.error || 'Bilinmeyen hata'));
+                    }
+                  }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+              }} 
+              className="hidden" 
+            />
 
           </div>
 
@@ -850,6 +918,18 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             <XCircle className="w-3.5 h-3.5" />
             <span>Düzeltme ({generalAnalytics.rejectedPlans})</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('archived')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              activeTab === 'archived'
+                ? 'bg-amber-800 text-white shadow-md shadow-amber-900/20'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Archive className="w-3.5 h-3.5" />
+            <span>Arşiv ({plans.filter(p => p.isArchived).length})</span>
+          </button>
         </div>
 
         {/* Search Bar & Order Info */}
@@ -884,6 +964,8 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
             {activeTab === 'deputy' && 'Müdür Yardımcısı (Funda FİDAN) incelemesinde bekleyen gezi planı bulunmamaktadır.'}
             {activeTab === 'principal' && 'Okul Müdürü (Recep KIZILIRMAK) makam olurunda bekleyen gezi planı bulunmamaktadır.'}
             {activeTab === 'approved' && 'Henüz kesin onaylanmış bir gezi planı bulunmuyor.'}
+            {activeTab === 'rejected' && 'Düzeltme istenmiş bir gezi planı bulunmuyor.'}
+            {activeTab === 'archived' && 'Arşivlenmiş gezi planı bulunmamaktadır.'}
             {activeTab === 'all' && 'Kriterlerinize uygun gezi planı bulunamadı.'}
           </p>
         </div>
@@ -1187,29 +1269,81 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                       </button>
                     )}
 
-                    {/* Resmi Yazdır Butonu */}
-                    <button
-                      type="button"
-                      onClick={() => onPrintPlan(plan)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-slate-600" />
-                      <span>Resmi Çıktı</span>
-                    </button>
+                    {/* Yazdır Butonları Grubu */}
+                    <div className="w-full flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onPrintPlanWithView ? onPrintPlanWithView(plan, 'official_plan') : onPrintPlan(plan)}
+                        className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                        title="2 Sayfalık Resmi Gezi Planı ve Olur Belgesi Yazdır"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Plan Çıktısı</span>
+                      </button>
 
-                    {/* Sil Butonu */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm(`"${plan.destinationName}" gezi planını kalıcı olarak silmek istediğinize emin misiniz?`)) {
-                          onDeletePlan(plan.id);
-                        }
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition cursor-pointer"
-                      title="Kaydı Sil"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      {plan.studentList && plan.studentList.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onPrintPlanWithView && onPrintPlanWithView(plan, 'ek1_parent_consent')}
+                          className="p-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 transition cursor-pointer"
+                          title={`Ek-1 Veli İzin Muvafakatnamelerini Yazdır (${plan.studentList.length} Öğrenci)`}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {plan.studentList && plan.studentList.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onPrintPlanWithView && onPrintPlanWithView(plan, 'ek2_student_list')}
+                          className="p-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 transition cursor-pointer"
+                          title={`Ek-2 Onaylı Öğrenci İsim Listesini Yazdır (${plan.studentList.length} Öğrenci)`}
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Arşiv & Sil Butonları */}
+                    <div className="flex items-center gap-1 w-full justify-end">
+                      {plan.isArchived ? (
+                        <button
+                          type="button"
+                          onClick={() => onRestorePlan && onRestorePlan(plan.id)}
+                          className="px-2.5 py-1 text-[11px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg transition cursor-pointer flex items-center gap-1"
+                          title="Planı Arşivden Çıkar ve Aktif Listeye Geri Al"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Arşivden Çıkar</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onArchivePlan && onArchivePlan(plan.id)}
+                          className="p-1.5 text-slate-400 hover:text-amber-700 rounded-lg hover:bg-amber-50 transition cursor-pointer"
+                          title="Planı Arşive Kaldır (Güvenli Saklama)"
+                        >
+                          <Archive className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Kalıcı Silme (Sadece Müdür Yetkisinde ya da Arşivde) */}
+                      {activeAdminRole === 'okul_muduru' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`DİKKAT: "${plan.destinationName}" gezi kaydı kalıcı olarak veritabanından silinecektir. Devam edilsin mi?`)) {
+                              if (onPermanentPurgePlan) onPermanentPurgePlan(plan.id);
+                              else onDeletePlan(plan.id);
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                          title="Müdür Yetkisi: Kalıcı Olarak Veritabanından Sil"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
 
                   </div>
 
@@ -1374,6 +1508,71 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
 
               </div>
 
+              {/* Ek-2 Onaylı Öğrenci Listesi Önizleme (Varsa) */}
+              {inspectingPlan.studentList && inspectingPlan.studentList.length > 0 && (
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                      <Users className="w-4 h-4 text-emerald-600" />
+                      <span>MEB Ek-2 Onaylı Öğrenci İsim Listesi ({inspectingPlan.studentList.length} Kayıt)</span>
+                    </h5>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onPrintPlanWithView && onPrintPlanWithView(inspectingPlan, 'ek1_parent_consent')}
+                        className="px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Ek-1 Veli İzinleri Bas</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onPrintPlanWithView && onPrintPlanWithView(inspectingPlan, 'ek2_student_list')}
+                        className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Ek-2 Liste Bas</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
+                    <table className="w-full text-[11px] text-left">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
+                        <tr>
+                          <th className="py-1.5 px-2.5 w-10">Sıra</th>
+                          <th className="py-1.5 px-2.5 w-16">Okul No</th>
+                          <th className="py-1.5 px-2.5">Adı Soyadı</th>
+                          <th className="py-1.5 px-2.5 w-16">Sınıf/Şube</th>
+                          <th className="py-1.5 px-2.5">Veli Adı</th>
+                          <th className="py-1.5 px-2.5 w-28">Veli Telefon</th>
+                          <th className="py-1.5 px-2.5 text-center w-24">Veli İzni</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {inspectingPlan.studentList.map((stu, i) => (
+                          <tr key={stu.id || i} className="hover:bg-slate-50/50">
+                            <td className="py-1.5 px-2.5 text-slate-400 font-mono text-center">{i + 1}</td>
+                            <td className="py-1.5 px-2.5 font-mono font-bold text-indigo-900">{stu.studentNumber || '-'}</td>
+                            <td className="py-1.5 px-2.5 font-semibold text-slate-800">{stu.fullName}</td>
+                            <td className="py-1.5 px-2.5 text-slate-600">{stu.grade}</td>
+                            <td className="py-1.5 px-2.5 text-slate-600">{stu.parentName || '-'}</td>
+                            <td className="py-1.5 px-2.5 text-slate-600 font-mono">{stu.parentPhone || '-'}</td>
+                            <td className="py-1.5 px-2.5 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                stu.consentStatus === 'Alındı' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                              }`}>
+                                {stu.consentStatus || 'Bekleniyor'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Maarif Modeli ve Öğrenme Çıktıları */}
               {(inspectingPlan.courseName || inspectingPlan.outcomes || inspectingPlan.purpose) && (
                 <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2">
@@ -1499,15 +1698,42 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                   <span>PDF İndir</span>
                 </button>
 
-                {/* Yazdır */}
+                {/* Yazdır (Resmi Plan) */}
                 <button
                   type="button"
-                  onClick={() => onPrintPlan(inspectingPlan)}
+                  onClick={() => onPrintPlanWithView ? onPrintPlanWithView(inspectingPlan, 'official_plan') : onPrintPlan(inspectingPlan)}
                   className="px-3.5 py-2 text-xs font-bold text-slate-800 bg-white hover:bg-slate-200 rounded-xl border border-slate-300 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="2 Sayfalık Resmi Gezi Planı Çıktısı"
                 >
                   <Printer className="w-4 h-4 text-slate-600" />
                   <span>2 Sayfa Çıktı</span>
                 </button>
+
+                {/* Ek-1 Veli İzinleri */}
+                {inspectingPlan.studentList && inspectingPlan.studentList.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onPrintPlanWithView && onPrintPlanWithView(inspectingPlan, 'ek1_parent_consent')}
+                    className="px-3.5 py-2 text-xs font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    title="Ek-1 MEB Veli İzin Muvafakatnameleri (Sayfada 2 Adet)"
+                  >
+                    <FileText className="w-4 h-4 text-indigo-600" />
+                    <span>Ek-1 Veli İzinleri</span>
+                  </button>
+                )}
+
+                {/* Ek-2 Öğrenci Listesi */}
+                {inspectingPlan.studentList && inspectingPlan.studentList.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onPrintPlanWithView && onPrintPlanWithView(inspectingPlan, 'ek2_student_list')}
+                    className="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    title="Ek-2 MEB Onaylı Öğrenci İsim Listesi"
+                  >
+                    <Users className="w-4 h-4 text-emerald-600" />
+                    <span>Ek-2 Öğrenci Listesi</span>
+                  </button>
+                )}
 
                 {/* Formda Aç */}
                 <button
@@ -1521,6 +1747,39 @@ export const AdminApprovalPanel: React.FC<AdminApprovalPanelProps> = ({
                   <Edit3 className="w-4 h-4 text-indigo-600" />
                   <span>Formda Aç</span>
                 </button>
+
+                {/* Arşivleme / Geri Yükleme */}
+                {inspectingPlan.isArchived ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onRestorePlan) {
+                        onRestorePlan(inspectingPlan.id);
+                        setInspectingPlan({ ...inspectingPlan, isArchived: false });
+                      }
+                    }}
+                    className="px-3.5 py-2 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl border border-amber-300 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    title="Planı Arşivden Çıkar"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Arşivden Çıkar</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onArchivePlan) {
+                        onArchivePlan(inspectingPlan.id);
+                        setInspectingPlan({ ...inspectingPlan, isArchived: true });
+                      }
+                    }}
+                    className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    title="Planı Arşive Kaldır"
+                  >
+                    <Archive className="w-4 h-4" />
+                    <span>Arşive Kaldır</span>
+                  </button>
+                )}
 
                 {/* Düzeltme İste */}
                 {!inspectingPlan.status.startsWith('onaylandi') && (

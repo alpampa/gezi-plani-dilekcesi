@@ -19,9 +19,13 @@ import {
   Send,
   Save,
   Footprints,
-  FileDown
+  FileDown,
+  FileText,
+  Printer,
+  ClipboardList
 } from 'lucide-react';
-import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem, GradeStudentRow, UserRole } from '../types';
+import type { GeziPlanData, GeziTeacher, GeziCompanion, GeziScheduleItem, GradeStudentRow, StudentListItem, UserRole } from '../types';
+import type { PrintViewType } from './PrintDocument';
 import { TURKISH_CITIES, ISTANBUL_DISTRICTS, CATEGORIES, PRESET_LOCATIONS } from '../data/locations';
 import { CURRICULUM_DATA } from '../data/curriculum';
 import { checkTripDeadlineRule } from '../services/db';
@@ -30,6 +34,7 @@ interface GeziFormProps {
   data: GeziPlanData;
   onChange: (updated: Partial<GeziPlanData>) => void;
   onPrint: () => void;
+  onPrintView?: (viewType: PrintViewType) => void;
   onDownloadPDF?: () => void;
   onSubmitForApproval?: () => void;
   onSaveDraft?: () => void;
@@ -40,6 +45,7 @@ export const GeziForm: React.FC<GeziFormProps> = ({
   data, 
   onChange, 
   onPrint, 
+  onPrintView,
   onDownloadPDF,
   onSubmitForApproval, 
   onSaveDraft,
@@ -47,6 +53,11 @@ export const GeziForm: React.FC<GeziFormProps> = ({
 }) => {
   const deadlineStatus = checkTripDeadlineRule(data.tripDate, data.transportationType);
   const isLockedForTeacher = userRole === 'ogretmen' && !deadlineStatus.isEditable && data.createdAt !== data.updatedAt;
+  // Student list modal / bulk paste state
+  const [isStudentListOpen, setIsStudentListOpen] = useState(false);
+  const [bulkPasteText, setBulkPasteText] = useState('');
+  const [isBulkPasteModalOpen, setIsBulkPasteModalOpen] = useState(false);
+
   // Curriculum selector state
   const [selectedGradeId, setSelectedGradeId] = useState<string>('grade-1');
   const [selectedLessonName, setSelectedLessonName] = useState<string>('Hayat Bilgisi (Maarif Modeli)');
@@ -54,6 +65,80 @@ export const GeziForm: React.FC<GeziFormProps> = ({
   const currentGradeData = CURRICULUM_DATA.find(g => g.id === selectedGradeId) || CURRICULUM_DATA[0];
   const currentLessons = currentGradeData.lessons;
   const currentLesson = currentLessons.find(l => l.name === selectedLessonName) || currentLessons[0];
+
+  const handleAddStudent = () => {
+    const currentList = data.studentList || [];
+    const newStudent: StudentListItem = {
+      id: 'st-' + Date.now(),
+      studentNumber: '',
+      fullName: '',
+      grade: data.targetGrades.split(',')[0]?.trim() || '',
+      parentName: '',
+      parentPhone: '',
+      bloodType: '',
+      consentStatus: 'Alındı'
+    };
+    onChange({ studentList: [...currentList, newStudent] });
+  };
+
+  const handleUpdateStudent = (index: number, field: keyof StudentListItem, val: any) => {
+    const currentList = [...(data.studentList || [])];
+    if (currentList[index]) {
+      currentList[index] = { ...currentList[index], [field]: val };
+      onChange({ studentList: currentList });
+    }
+  };
+
+  const handleDeleteStudent = (index: number) => {
+    const currentList = (data.studentList || []).filter((_, i) => i !== index);
+    onChange({ studentList: currentList });
+  };
+
+  const handleBulkPasteSubmit = () => {
+    if (!bulkPasteText.trim()) return;
+    const lines = bulkPasteText.trim().split('\n');
+    const parsedStudents: StudentListItem[] = [];
+
+    lines.forEach((line, i) => {
+      const parts = line.split(/[\t,;]/).map(s => s.trim()).filter(Boolean);
+      if (parts.length > 0) {
+        let stNo = '';
+        let stName = '';
+        let parent = '';
+        let phone = '';
+
+        if (/^\d+$/.test(parts[0])) {
+          stNo = parts[0];
+          stName = parts[1] || '';
+          parent = parts[2] || '';
+          phone = parts[3] || '';
+        } else {
+          stName = parts[0];
+          parent = parts[1] || '';
+          phone = parts[2] || '';
+        }
+
+        if (stName) {
+          parsedStudents.push({
+            id: 'st-' + Date.now() + '-' + i,
+            studentNumber: stNo,
+            fullName: stName,
+            grade: data.targetGrades.split(',')[0]?.trim() || '',
+            parentName: parent,
+            parentPhone: phone,
+            consentStatus: 'Alındı'
+          });
+        }
+      }
+    });
+
+    if (parsedStudents.length > 0) {
+      const merged = [...(data.studentList || []), ...parsedStudents];
+      onChange({ studentList: merged });
+      setBulkPasteText('');
+      setIsBulkPasteModalOpen(false);
+    }
+  };
 
   // When grade changes, adjust default lesson
   const handleGradeChange = (gradeId: string) => {
@@ -1035,7 +1120,260 @@ export const GeziForm: React.FC<GeziFormProps> = ({
 
           </div>
         </div>
+
+        {/* EK-2: e-Okul UYUMLU ÖĞRENCİ İSİM LİSTESİ VE EK-1 VELİ İZİN BELGELERİ KARTI */}
+        <div className="mt-6 pt-5 border-t border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-indigo-50/70 p-4 rounded-xl border border-indigo-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-indigo-600 text-white">
+                <ClipboardList className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-indigo-950">
+                    e-Okul Ek-2 Öğrenci İsim Listesi & Ek-1 Veli İzin Belgeleri
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-200 text-indigo-900">
+                    {(data.studentList || []).length} Öğrenci Kayıtlı
+                  </span>
+                </div>
+                <p className="text-xs text-indigo-700 mt-0.5">
+                  e-Okul'dan öğrenci isimlerini yapıştırabilir, tek tıkla MEB Ek-1 Veli İzin Muvafakatnamesi ve Ek-2 Onaylı Liste basabilirsiniz.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Ek-1 Veli İzinleri Yazdır */}
+              <button
+                type="button"
+                onClick={() => onPrintView ? onPrintView('ek1_parent_consent') : onPrint()}
+                className="px-3 py-1.5 text-xs font-bold text-indigo-900 bg-white hover:bg-indigo-100 rounded-lg border border-indigo-300 shadow-xs flex items-center gap-1.5 cursor-pointer transition"
+                title="MEB Ek-1 Veli İzin Muvafakatnamelerini A4 formatında yazdır"
+              >
+                <Printer className="w-3.5 h-3.5 text-indigo-700" />
+                <span>👨‍👩‍👧 EK-1 Veli İzinlerini Bas</span>
+              </button>
+
+              {/* Ek-2 Öğrenci Listesi Yazdır */}
+              <button
+                type="button"
+                onClick={() => onPrintView ? onPrintView('ek2_student_list') : onPrint()}
+                className="px-3 py-1.5 text-xs font-bold text-indigo-900 bg-white hover:bg-indigo-100 rounded-lg border border-indigo-300 shadow-xs flex items-center gap-1.5 cursor-pointer transition"
+                title="MEB Ek-2 Onaylı Öğrenci Listesini yazdır"
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-700" />
+                <span>📋 EK-2 Öğrenci Listesi Bas</span>
+              </button>
+
+              {/* Listeyi Aç / Kapat */}
+              <button
+                type="button"
+                onClick={() => setIsStudentListOpen(!isStudentListOpen)}
+                className="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>{isStudentListOpen ? 'Listeyi Gizle' : 'Listeyi Düzenle / Ekle'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Açılır Öğrenci Tablosu ve Yönetim Alanı */}
+          {isStudentListOpen && (
+            <div className="mt-4 p-4 bg-white rounded-xl border border-indigo-200 shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-800">Öğrenci ve Veli Bilgileri Masası:</span>
+                  <span className="text-[11px] text-slate-500">({(data.studentList || []).length} / {data.totalStudentCount || 0} Öğrenci)</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBulkPasteModalOpen(true)}
+                    className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ClipboardList className="w-3.5 h-3.5" />
+                    <span>e-Okul'dan Toplu Yapıştır</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAddStudent}
+                    className="px-3 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Tek Öğrenci Ekle</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Öğrenci Tablosu */}
+              {(!data.studentList || data.studentList.length === 0) ? (
+                <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                  <Users className="w-8 h-8 text-slate-300 mx-auto mb-1.5" />
+                  <p className="text-xs font-bold text-slate-700">Henüz öğrenci isim listesi eklenmedi</p>
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto mt-0.5">
+                    İsim listesi eklemeden de gezi planı sunabilirsiniz. İsim listesi ekleyerek MEB Ek-1 ve Ek-2 evraklarını otomatik alabilirsiniz.
+                  </p>
+                  <div className="flex justify-center gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkPasteModalOpen(true)}
+                      className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer"
+                    >
+                      Toplu e-Okul Listesi Yapıştır
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-100 text-slate-700 font-bold sticky top-0">
+                      <tr>
+                        <th className="p-2 w-10 text-center">S.N</th>
+                        <th className="p-2 w-20">Okul No</th>
+                        <th className="p-2">Öğrenci Adı Soyadı</th>
+                        <th className="p-2 w-24">Sınıf/Şube</th>
+                        <th className="p-2">Veli Adı Soyadı</th>
+                        <th className="p-2 w-32">Veli Tel</th>
+                        <th className="p-2 w-24 text-center">Ek-1 İzin</th>
+                        <th className="p-2 w-12 text-center">Sil</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {data.studentList.map((st, idx) => (
+                        <tr key={st.id || idx} className="hover:bg-slate-50/80">
+                          <td className="p-2 text-center font-bold text-slate-400">{idx + 1}</td>
+                          <td className="p-1">
+                            <input
+                              type="text"
+                              value={st.studentNumber || ''}
+                              onChange={(e) => handleUpdateStudent(idx, 'studentNumber', e.target.value)}
+                              placeholder="123"
+                              className="w-full px-2 py-1 text-xs font-semibold rounded border border-slate-300 bg-white"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="text"
+                              value={st.fullName}
+                              onChange={(e) => handleUpdateStudent(idx, 'fullName', e.target.value)}
+                              placeholder="Adı Soyadı"
+                              className="w-full px-2 py-1 text-xs font-bold rounded border border-slate-300 bg-white"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="text"
+                              value={st.grade || ''}
+                              onChange={(e) => handleUpdateStudent(idx, 'grade', e.target.value)}
+                              placeholder="3-A"
+                              className="w-full px-2 py-1 text-xs font-semibold rounded border border-slate-300 bg-white"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="text"
+                              value={st.parentName || ''}
+                              onChange={(e) => handleUpdateStudent(idx, 'parentName', e.target.value)}
+                              placeholder="Veli Adı"
+                              className="w-full px-2 py-1 text-xs font-semibold rounded border border-slate-300 bg-white"
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              type="text"
+                              value={st.parentPhone || ''}
+                              onChange={(e) => handleUpdateStudent(idx, 'parentPhone', e.target.value)}
+                              placeholder="05..."
+                              className="w-full px-2 py-1 text-xs font-semibold rounded border border-slate-300 bg-white"
+                            />
+                          </td>
+                          <td className="p-1 text-center">
+                            <select
+                              value={st.consentStatus || 'Alındı'}
+                              onChange={(e) => handleUpdateStudent(idx, 'consentStatus', e.target.value)}
+                              className="px-2 py-1 text-[11px] font-bold rounded border border-slate-300 bg-white text-emerald-800"
+                            >
+                              <option value="Alındı">Alındı</option>
+                              <option value="Bekleniyor">Bekleniyor</option>
+                            </select>
+                          </td>
+                          <td className="p-1 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteStudent(idx)}
+                              className="p-1 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                              title="Sil"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </section>
+
+      {/* e-Okul Toplu Yapıştır Modalı */}
+      {isBulkPasteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-slate-900">e-Okul Öğrenci Listesi Toplu Yapıştır</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBulkPasteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              e-Okul veya Excel'den kopyaladığınız öğrenci listesini aşağıya yapıştırınız. Format: 
+              <strong className="block font-mono text-[11px] bg-slate-100 p-1.5 rounded mt-1 text-slate-800">
+                101 Ahmet Yılmaz Ali Yılmaz 05321234567<br />
+                102 Zeynep Kaya Mehmet Kaya 05559876543
+              </strong>
+            </p>
+
+            <textarea
+              rows={8}
+              value={bulkPasteText}
+              onChange={(e) => setBulkPasteText(e.target.value)}
+              placeholder="Her satıra bir öğrenci gelecek şekilde yapıştırınız..."
+              className="w-full p-3 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsBulkPasteModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkPasteSubmit}
+                disabled={!bulkPasteText.trim()}
+                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl cursor-pointer shadow-md disabled:opacity-50"
+              >
+                Öğrencileri İçe Aktar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 5. GÖREVLİ ÖĞRETMEN VE REFAKATÇİ LİSTESİ (DİNAMİK) */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 shadow-xs border border-slate-200">
