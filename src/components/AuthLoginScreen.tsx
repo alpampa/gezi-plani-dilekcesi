@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { AuthUser, UserRole } from '../types';
+import { DatabaseService } from '../services/db';
 import { 
   School, 
   GraduationCap, 
@@ -74,6 +75,26 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
       }
     } catch (_) {}
   }, []);
+
+  // E-posta girildiğinde geçmiş kayıtlardan öğretmenin doğru adını otomatik bul
+  const handleEmailChange = (newEmail: string) => {
+    setEmail(newEmail);
+    if (mainCategory === 'ogretmen' && (!teacherName.trim() || teacherName.trim().length < 3)) {
+      try {
+        const plans = DatabaseService.getPlans();
+        const matchedPlan = plans.find(p => 
+          p.teacherEmail?.toLowerCase() === newEmail.trim().toLowerCase() && 
+          (p.submittedBy || p.headTeacher?.fullName)
+        );
+        if (matchedPlan) {
+          const foundName = matchedPlan.submittedBy || matchedPlan.headTeacher?.fullName;
+          if (foundName && foundName.trim()) {
+            setTeacherName(foundName.trim());
+          }
+        }
+      } catch (_) {}
+    }
+  };
 
   // Ana Kategori (Öğretmen / Okul İdaresi) değiştiğinde
   const handleSelectMainCategory = (cat: MainCategory) => {
@@ -279,7 +300,7 @@ export const AuthLoginScreen: React.FC<AuthLoginScreenProps> = ({ onLogin }) => 
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder="E-posta adresinizi giriniz (Örn: adiniz@meb.k12.tr)..."
                 className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
               />

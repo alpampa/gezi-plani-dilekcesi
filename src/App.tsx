@@ -20,7 +20,7 @@ import {
 } from './services/db';
 import { EmailEngine } from './services/emailEngine';
 import { generateAndDownloadPlanPDF } from './services/pdf';
-import { Eye, EyeOff, CheckCircle2, AlertCircle, Sparkles, GraduationCap, Building2 } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, AlertCircle, Sparkles, GraduationCap, Building2, History, PlusCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const AUTH_STORAGE_KEY = 'odos_gezi_plani_auth_user_v1';
@@ -403,6 +403,56 @@ export function App() {
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
         
+        {/* Kişisel Karşılama Kartı (Hoş Geldiniz, Ad Soyad) */}
+        <div className="no-print bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-4 sm:p-5 text-white shadow-lg border border-indigo-900/50 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center text-white shadow-md shadow-red-600/30 shrink-0 font-black text-sm uppercase">
+              {currentUser.fullName ? currentUser.fullName.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('') : 'MEB'}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-500/25 text-red-200 border border-red-400/30">
+                  {currentUser.role === 'ogretmen' ? 'Öğretmen / Kafile Başkanı Portalı' : (currentUser.title || 'Okul İdaresi')}
+                </span>
+                <span className="text-[11px] text-indigo-300 font-mono hidden md:inline">
+                  {currentUser.email}
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
+                Hoş Geldiniz, {currentUser.fullName} 👋
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={() => setIsHistoryOpen(true)}
+              className="px-3.5 py-2 text-xs font-bold text-white bg-white/10 hover:bg-white/20 rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-white/15"
+              title="Geçmiş Gezi Planları ve Onay Süreçleri Takip Masası"
+            >
+              <History className="w-4 h-4 text-amber-300" />
+              <span>
+                {currentUser.role === 'ogretmen' 
+                  ? `Planlarım (${savedPlans.filter(p => p.teacherEmail?.toLowerCase() === currentUser.email?.toLowerCase()).length})` 
+                  : `Tüm Planlar (${savedPlans.length})`}
+              </span>
+            </button>
+            
+            {currentUser.role === 'ogretmen' && (
+              <button
+                type="button"
+                onClick={handleNewPlan}
+                className="px-3.5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md shadow-red-600/25 transition flex items-center gap-1.5 cursor-pointer"
+                title="Yeni Sıfır Gezi Planı Formu Aç"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Yeni Gezi Planla</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Role Tab Navigation Banner */}
         <div className="no-print flex flex-col sm:flex-row items-center justify-between bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 mb-6 shadow-xs gap-3">
           <div className="flex items-center gap-2">
